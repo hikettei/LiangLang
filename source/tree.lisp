@@ -111,20 +111,14 @@
    (liangnames :|(| parse-args :|)| #'(lambda (name x args y)
                                         (declare (ignore x y))
 
-                                        `(:DEF ,name ,args)))
+                                        `(:CALLDEF ,name ,args)))
 
    )
 
-  
-  (parse-args liang
 
-              (liang :COMMA parse-args
-                     #'(lambda (x y z)
-                         (declare (ignore y))
-
-                         (if (listp z)
-                             (cons x z)
-                             (list x z)))))
-
-  
-  )
+  (parse-args
+   (liang #'list)
+   (liang :COMMA parse-args
+          #'(lambda (x y z)
+              (declare (ignore y))
+              (cons x z)))))
