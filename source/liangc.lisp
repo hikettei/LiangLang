@@ -64,28 +64,28 @@
 
 
         (:CALLDEF
-         
-         (dolist (i (cdr branchbody))
-           (lvmiseq-encode (car i) compile-info))
+
+         (dolist (i (car (cdr branchbody)))
+           (lvmiseq-encode i compile-info))
 
 
          (gen-iseq iseq :CALLDEF `(,(if (equal (caar branchbody) :NAME)
                                    (second (car branchbody))
                                    (error "function's name is not proper"))
-                               ,(length (cdr branchbody)))))
+                               ,(length (car (cdr branchbody))))))
         
         (:DEF
          
-         (dolist (i (cdr branchbody))
-           (lvmiseq-encode (car i) compile-info)
+         (dolist (i (car (cdr branchbody)))
+           (lvmiseq-encode i compile-info)
            
            (let* ((treetype-fname (caar branchbody))
                   (fname (if (equal treetype-fname :NAME)
-                             (second (car branchbody))
+                             (second (cdr branchbody))
                              (error "Function's name is not proper"))))
 
 
-             (gen-iseq iseq :PUSHDEF `(,fname ,(length (cdr branchbody)))))))
+             (gen-iseq iseq :PUSHDEF `(,fname ,(length (car (cdr branchbody))))))))
 
 
         (:PROG
@@ -95,6 +95,10 @@
         (:NUMBER
          (gen-iseq iseq :PUSHNUMBER branchbody))
         
+
+        (:STRING
+         (gen-iseq iseq :PUSHSTRING branchbody))
+
         
         (:NAME
          (gen-iseq iseq :PUSHNAME branchbody))
