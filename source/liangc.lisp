@@ -23,8 +23,10 @@
   compile-info)
 
 
-(defun liang-compile-file ())
 
+(defun liang-compile-file ())
+(defun liangc (code)
+  (liang-compile-program (gentree code)))
 
 (defmacro gen-iseq (iseq instruction-name operand)
   `(vector-push-extend (append (list ,instruction-name) ,operand) ,iseq))
@@ -103,6 +105,13 @@
         (:NAME
          (gen-iseq iseq :PUSHNAME branchbody))
 
+        (:INSTANT-STRUCTURE
+
+         (dolist (i (car branchbody))
+           (lvmiseq-encode i compile-info))
+
+         (gen-iseq iseq :PUSHLIST `(,(length (car branchbody)))))
+        
         
         (T (print "Undefined Tree ->")
            (print branchtype))))))
