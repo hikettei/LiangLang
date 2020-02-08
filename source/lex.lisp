@@ -17,6 +17,7 @@
   ("}"    (return (values :} :})))
   ("{"    (return (values :{ :{)))
 
+  (";"    (return (values :END :END)))
 
   ("\\["    (return (values :[ :[)))
   ("\\]"    (return (values :] :])))

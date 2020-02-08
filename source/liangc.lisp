@@ -23,8 +23,22 @@
   compile-info)
 
 
+(defun liang-compile-file (filepath)
 
-(defun liang-compile-file ())
+  (with-open-file (in (concatenate 'string filepath ".liang")
+                      :direction :input)
+    (let ((buf (make-string (file-length in))))
+      (read-sequence buf in)
+
+    (with-open-file (target (concatenate 'string filepath ".lvm")
+                    :direction :output
+                    :if-exists :supersede
+                    :if-does-not-exist :create)
+
+      (format target (write-to-string
+                      (coerce (slot-value (liangc buf) 'iseq) 'list)))))))
+
+
 (defun liangc (code)
   (liang-compile-program (gentree code)))
 
