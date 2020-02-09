@@ -36,25 +36,27 @@
               
               :COMMA
               :DOT
+              :END
               
               :macro-body
               :funame
               :name))
 
 
-  (:precedence ((:left :funame :name :* :/)
-                (:left :+ :-)
+  (:precedence ((:left :* :/)
+                (:left :+ :- :funame :name)
                 (:left :=)))
 
   
   (program
-   (liang program #'cons)
+   (liang :END program #'(lambda (x y z)
+          (declare (ignore y))
+          (cons x z)))
    (liang #'list))
 
 
   (liang
    liangsyntax
-   
    liangsymbol)
 
   (liangsymbol
@@ -65,18 +67,19 @@
 
 
   (liangnames
-   (:funame #'(lambda (x) `(:NAME ,x)))
-   (:name   #'(lambda (x) `(:NAME ,x))))
+   (liangnamelist #'(lambda (x) `(:NAME ,x))))
 
+  (liangnamelist :+ :- :* :/ :funame :name :=)
   
-  (liangsyntax
-
+  (liangexp
 
    (liang :+ liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
    (liang :- liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
    (liang :* liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
-   (liang :/ liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
+   (liang :/ liang #'(lambda (x y z) `(:EXP ,y ,x ,z))))
 
+  (liangsyntax
+   
    (liang := liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
 
    
@@ -112,10 +115,8 @@
                                         (declare (ignore x y))
 
                                         `(:CALLDEF ,name ,args)))
-
-   )
-
-
+   liangexp)
+  
   (parse-args
    (liang #'list)
    (liang :COMMA parse-args
