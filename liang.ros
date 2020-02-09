@@ -1,0 +1,42 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  (asdf:load-system :lianglang)
+  ;;#+quicklisp(ql:quickload '() :silent t)
+  )
+
+(defpackage :ros.script.liang.3790224613
+  (:use :cl))
+(in-package :ros.script.liang.3790224613)
+
+(defun show-help ()
+  (princ "liang [compile run compile-run] path args")
+  (princ #\newline))
+
+(defun main (&rest argv)
+  
+  (if (<= (length argv) 1)
+      (show-help)
+
+      (let ((arg (first argv))
+            (path (second argv)))
+
+        (cond
+          ((equal arg "compile")
+           (liang:liang-compile-file path))
+
+          ((equal arg "run")
+           (liang:lvm-loadfile-and-execute path))
+
+          ((equal arg "compile-run")
+           (liang:liang-compile-file path)
+           (liang:lvm-loadfile-and-execute path))
+
+          (T (show-help)))))
+  (princ #\newline))
+
+;;; vim: set ft=lisp lisp:
