@@ -46,7 +46,7 @@
   `(vector-push-extend (append (list ,instruction-name) ,operand) ,iseq))
 
 (defmacro compile-for-prog (ast)
-  `(slot-value (liang-compile-program ,ast) 'iseq))
+  `(coerce (slot-value (liang-compile-program ,ast) 'iseq) 'list))
 
 
 
@@ -93,15 +93,15 @@
         (:DEF
          
          (dolist (i (car (cdr branchbody)))
-           (lvmiseq-encode i compile-info)
+           (lvmiseq-encode i compile-info))
            
            (let* ((treetype-fname (caar branchbody))
                   (fname (if (equal treetype-fname :NAME)
-                             (second (cdr branchbody))
+                             (second (first branchbody))
                              (error "Function's name is not proper"))))
 
 
-             (gen-iseq iseq :PUSHDEF `(,fname ,(length (car (cdr branchbody))))))))
+             (gen-iseq iseq :PUSHDEF `(,fname ,(length (car (cdr branchbody)))))))
 
 
         (:PROG

@@ -34,7 +34,7 @@
 (defun lvm-make-newscope ()
   (let ((scope (make-LVMScope)))
 
-    (lvm-define-function scope 'calllisp `(fname args) `((:CALLLISP)))
+    (lvm-define-function scope 'calllisp `(fname args) `(((:CALLLISP))))
 
     scope))
 
@@ -64,7 +64,7 @@
     (cond
       
       ((and (typep symbol-name 'LVMFunction)
-            (typep symbol-name 'LVMFunction))
+            (typep symbol-value 'LVMFunction))
 
        (lvm-implements-function symbol-name symbol-value self))
       
@@ -98,10 +98,14 @@
 
     (lvm-register-variable
      (make-LVMFunction :name name
-                       :arg-symbols args)
+                       :arg-symbols (reverse args))
      (make-LVMFunction :function-body iseq)
      self)))
 
+(defmacro lvm-evaluation-args (arg self)
+  `(if (typep ,arg 'symbol)
+       (lvm-getlocal-variable ,arg ,self)
+       ,arg))
 
 (defun lvm-call-function (function args self)
   (with-slots (function-body arg-symbols) function
@@ -113,15 +117,16 @@
       
       ; Set arguments
 
-      (setq arg-symbols (reverse arg-symbols)) 
-
       (dotimes (i (length args))
         (lvm-register-variable (nth i arg-symbols)
-                               (nth i args) newscope))
+                               (lvm-evaluation-args
+                                (nth i args)
+                                self)
+                               newscope))
 
       (vector-push-extend NIL newscopestack)
-      
-      (dolist (i function-body)
+
+      (dolist (i (first function-body))
           (lvm-exec-instruction i newscope))
 
 
@@ -161,13 +166,13 @@
 
 (defun lvm-calldef (operand self)
 
-  (with-slots (variable-table stack) self
-
+  (with-slots (stack) self
+    
     (let* ((name (car operand))
            (argssize (second operand))
 
            (args (loop for i from 1 to argssize
-                    append `(,(lvm-stack-pop self T))))
+                    append `(,(lvm-stack-pop self))))
 
            (function (if (or (has-variable? name self)
                              (equal name '=))
@@ -177,7 +182,7 @@
       
     (cond
       ((equal name '=)
-       (lvm-register-variable (first args) (second args) self))
+       (lvm-register-variable (second args) (first args) self))
       
       ((equal (slot-value function 'function-body) NIL)
        (error "The called function doesn't have implements."))
@@ -190,9 +195,9 @@
   (with-slots (stack) self
 
     (let* ((args (loop for i from 1 to (second operand)
-                    append (lvm-stack-pop self))))
+                    append `(,(lvm-stack-pop self)))))
 
-      (lvm-pushobject (make-LVMFunction :arg-symbols args
+      (lvm-pushobject (make-LVMFunction :arg-symbols (reverse args)
                                         :name (first operand))
                       self))))
 
@@ -211,8 +216,18 @@
   (with-slots (stack) self
     (lvm-pushobject
      (lvm-make-array (loop for i from 1 to (car operand)
-                       append `(,(lvm-stack-pop self))))
+                       append `(,(lvm-stack-pop self T))))
      self)))
+
+
+(defun lvm-loadfile-and-execute (filepath)
+  (with-open-file (in (concatenate 'string filepath ".lvm")
+                      :direction :input)
+    (let ((buf (make-string (file-length in))))
+      (read-sequence buf in)
+
+
+      (lvm-execute (read-from-string buf)))))
 
 
 (defun lvm-execute (iseq &optional (lvm-info (make-LiangVMInfomation)))
@@ -230,14 +245,13 @@
         (lvm-exec-instruction i (aref scopes 0))))
   lvm-info)
 
-
-
 (defun lvm-exec-instruction (iseq self)
 
   (let* ((opecode (first iseq))
            (operand (cdr iseq))
            (stack (slot-value self 'stack)))
-      
+
+    
       (case opecode
 
         (:PUSHNAME
@@ -250,7 +264,7 @@
          (lvm-pushvalue operand stack))
         
         (:PUSHPROG
-         (lvm-pushprog operand stack))
+         (lvm-pushprog operand self))
 
         (:PUSHLIST
          (lvm-pushlist operand self))
