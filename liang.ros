@@ -9,15 +9,14 @@ exec ros -Q -- $0 "$@"
   ;;#+quicklisp(ql:quickload '() :silent t)
   )
 
-(defpackage :ros.script.liang.3790224613
-  (:use :cl))
-(in-package :ros.script.liang.3790224613)
+(in-package :liang)
 
 (defun show-help ()
   (princ "liang [compile run compile-run] path args")
   (princ #\newline))
 
 (defun main (&rest argv)
+
   
   (if (<= (length argv) 1)
       (show-help)
@@ -27,14 +26,14 @@ exec ros -Q -- $0 "$@"
 
         (cond
           ((equal arg "compile")
-           (liang:liang-compile-file path))
+           (liang-compile-file path))
 
           ((equal arg "run")
-           (liang:lvm-loadfile-and-execute path))
+           (lvm-loadfile-and-execute path))
 
           ((equal arg "compile-run")
-           (liang:liang-compile-file path)
-           (liang:lvm-loadfile-and-execute path))
+           (liang-compile-file path)
+           (lvm-loadfile-and-execute path))
 
           (T (show-help)))))
   (princ #\newline))
