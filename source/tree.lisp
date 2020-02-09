@@ -90,7 +90,7 @@
 
    (:|(| liang :|)| #'(lambda (x y z)
                         (declare (ignore x z))
-                        `(:PROG ,y)))
+                        y))
    
    ; structure
 
@@ -110,6 +110,11 @@
                #'(lambda (x y z) `(:exp ,y ,x ,z)))
 
    (liang :DOT liang #'(lambda (x y z) `(:exp ,y ,x ,z)))
+
+   (liangnames :|(| :|)| #'(lambda (name x y )
+                             (declare (ignore x y))
+
+                             `(:CALLDEF ,name NIL)))
    
    (liangnames :|(| parse-args :|)| #'(lambda (name x args y)
                                         (declare (ignore x y))
