@@ -18,4 +18,6 @@
 
   (:import-from #:cl-lex)
 
-  (:export :gentree))
+  (:export :liangc :gentree
+           :liang-compile-file
+           :lvm-loadfile-and-execute))
