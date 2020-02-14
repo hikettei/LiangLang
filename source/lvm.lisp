@@ -43,7 +43,8 @@
   (make-LVMScope :global-variable-table
                  (slot-value base 'global-variable-table)
                  :variable-table
-                 (slot-value base 'global-variable-table)))
+                 (copy-hash-table
+                  (slot-value base 'variable-table))))
 
 
 (defun lvm-implements-function (x y self)
@@ -58,17 +59,17 @@
           function)))
 
 
-(defmethod lvm-register-variable (symbol-name symbol-value self)
+(defun lvm-register-variable (symbol-name symbol-value self)
   (with-slots (variable-table) self
 
     (cond
       
       ((and (typep symbol-name 'LVMFunction)
             (typep symbol-value 'LVMFunction))
-
+       
        (lvm-implements-function symbol-name symbol-value self))
       
-      (T (setf (gethash symbol-name variable-table) symbol-value)))))
+      (T (setf (gethash symbol-name (slot-value self 'variable-table)) symbol-value)))))
 
 
 (defmethod lvm-pushvalue (operand stack)
@@ -83,7 +84,7 @@
   (let* ((popped-value (vector-pop (slot-value self 'stack)))
          (value (if use
                     (if (typep popped-value 'symbol)
-                        (lvm-getlocal-variable popped-value self)
+                        (has-variable? popped-value self)
                         popped-value)
                     popped-value)))
     value))
@@ -155,18 +156,18 @@
 
 (defun lvm-getlocal-variable (name self)
 
-;  (with-slots (global-variable-table variable-table) self
-
+;  (with-slots (variable-table) self
 ;    (if (gethash name variable-table)
 ;        (gethash name variable-table)
-;        (error "The variable doesn't exist"))))
+;        (error "The variable doesn't exist")))
 
-  (has-variable? name self))
+(has-variable? name self))
+
 
 (defun has-variable? (name self)
   (with-slots (global-variable-table variable-table) self
-    (or (gethash name global-variable-table)
-        (gethash name variable-table))))
+    (or (gethash name variable-table)
+        (gethash name global-variable-table))))
 
 
 (defun lvm-calldef (operand self)
@@ -229,8 +230,7 @@
                       :direction :input)
     (let ((buf (make-string (file-length in))))
       (read-sequence buf in)
-
-
+      
       (lvm-execute (read-from-string buf)))))
 
 
