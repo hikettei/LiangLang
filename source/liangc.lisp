@@ -64,9 +64,9 @@
 
         (:EXP
 
-         (when (and (equal (car (second branchbody))
+         (when (and (eq (car (second branchbody))
                        :CALLDEF)
-                    (equal (car branchbody) '=))
+                    (eq (car branchbody) '=))
            
            ; When calling the operator "=",
            ; if operator's target is a function then Replace a tree to :def
@@ -75,8 +75,14 @@
          
          (lvmiseq-encode (second branchbody) compile-info)
          (lvmiseq-encode (third  branchbody) compile-info)
-         
-         (gen-iseq iseq :CALLDEF `(,(first branchbody) 2)))
+
+         (gen-iseq iseq :CALLDEF `(,(let* ((name (first branchbody))
+                                           (result (if (listp name)
+                                                       (second name)
+                                                       name)))
+                                      
+                                      result)
+                                    2)))
 
 
         (:CALLDEF
