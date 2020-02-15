@@ -233,6 +233,16 @@
       (lvm-execute (read-from-string buf)))))
 
 
+(defun lvm-include-lib (filepath self)
+  (with-open-file (in (concatenate 'string filepath ".lvm")
+                      :direction :input)
+    (let ((buf (make-string (file-length in))))
+      (read-sequence buf in)
+
+      (dolist (i (read-from-string buf))
+        (lvm-exec-instruction i self)))))
+
+
 (defun lvm-execute (iseq &optional (lvm-info (make-LiangVMInfomation)))
 
 
@@ -240,7 +250,9 @@
 
 
       (vector-push-extend (lvm-make-newscope) scopes)
-
+      
+      (lvm-include-lib "source/lib" (aref scopes 0))
+       
        ; initialize main
 
       (dolist (i iseq)
