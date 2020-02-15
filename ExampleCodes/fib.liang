@@ -1,0 +1,7 @@
+
+
+fib(n) = {
+  if((n equals 0) or (n equals 1), { 1 }, { fib(n - 1) + fib(n - 2) })
+};
+
+print(fib(19))
