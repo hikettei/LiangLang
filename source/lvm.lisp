@@ -116,18 +116,17 @@
            (newscopestack (slot-value newscope 'stack))
            (basestack     (slot-value self     'stack)))
 
-
-      (vector-push-extend NIL newscopestack)
       
       ; Set arguments
 
       (dotimes (i (length args))
         (lvm-register-variable (nth i arg-symbols)
                                (lvm-evaluation-args
-                                (nth i args)
+                               (nth i args)
                                 self)
                                newscope))
 
+      
       (dolist (i (first function-body))
           (lvm-exec-instruction i newscope))
 
@@ -141,17 +140,17 @@
 
 (defun lvm-calllisp (self)
 
-  (let ((args  (lvm-getlocal-variable 'args  self))
-        (fname (lvm-getlocal-variable 'fname self)))
-
-    (lvm-pushobject (apply (if (typep fname 'string)
+  (let* ((args  (lvm-getlocal-variable 'args  self))
+        (fname (lvm-getlocal-variable 'fname self))
+        (result (apply (if (typep fname 'string)
                                (read-from-string fname)
                                fname)
                            
                            (if (typep args 'LVMArray)
                                (slot-value args 'values)
-                               (error "Calllisp: Arguments must be an array.")))
-                    self)))
+                               (error "Calllisp: Arguments must be an array.")))))
+
+    (lvm-pushobject (if (eq result T) 1 result) self)))
 
 
 (defun lvm-getlocal-variable (name self)
@@ -177,8 +176,8 @@
     (let* ((name (car operand))
            (argssize (second operand))
 
-           (args (loop for i from 1 to argssize
-                    append `(,(lvm-stack-pop self))))
+           (args (reverse (loop for i from 1 to argssize
+                    append `(,(lvm-stack-pop self)))))
 
            (function (if (or (has-variable? name self)
                              (equal name '=))
@@ -187,22 +186,22 @@
 
     (cond
       ((equal name '=)
-       (lvm-register-variable (second args) (first args) self))
-      
+       (lvm-register-variable (first args) (second args) self))
+       
       ((equal (slot-value function 'function-body) NIL)
        (error "The called function doesn't have implements."))
 
-      (T (lvm-call-function function (reverse args) self))))))
+      (T (lvm-call-function function args self))))))
 
 
 (defun lvm-pushdef (operand self)
 
   (with-slots (stack) self
 
-    (let* ((args (loop for i from 1 to (second operand)
-                    append `(,(lvm-stack-pop self)))))
+    (let* ((args (reverse (loop for i from 1 to (second operand)
+                    append `(,(lvm-stack-pop self))))))
 
-      (lvm-pushobject (make-LVMFunction :arg-symbols (reverse args)
+      (lvm-pushobject (make-LVMFunction :arg-symbols args
                                         :name (first operand))
                       self))))
 
