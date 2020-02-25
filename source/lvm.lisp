@@ -5,7 +5,6 @@
 (defparameter *LVMVersion* "0.1")
 
 
-
 (defstruct LiangVMInfomation
   (sp 0)
   (started-at  "")
@@ -74,6 +73,11 @@
 
 (defmethod lvm-pushvalue (operand stack)
   (vector-push-extend (first operand) stack))
+
+
+(defmacro lvm-stack-pop-args (self size &optional (use NIL))
+  `(reverse (loop for i from 1 to ,size
+                 append (list (lvm-stack-pop ,self ,use)))))
 
 
 (defun lvm-stack-pop (self &optional (use NIL))
@@ -176,9 +180,7 @@
     (let* ((name (car operand))
            (argssize (second operand))
 
-           (args (reverse (loop for i from 1 to argssize
-                    append `(,(lvm-stack-pop self)))))
-
+           (args (lvm-stack-pop-args self argssize))
            (function (if (or (has-variable? name self)
                              (equal name '=))
                          (has-variable? name self)
@@ -198,9 +200,7 @@
 
   (with-slots (stack) self
 
-    (let* ((args (reverse (loop for i from 1 to (second operand)
-                    append `(,(lvm-stack-pop self))))))
-
+    (let* ((args (lvm-stack-pop-args self (second operand))))
       (lvm-pushobject (make-LVMFunction :arg-symbols args
                                         :name (first operand))
                       self))))
@@ -219,8 +219,7 @@
 
   (with-slots (stack) self
     (lvm-pushobject
-     (lvm-make-array (reverse (loop for i from 1 to (car operand)
-                       append `(,(lvm-stack-pop self T)))))
+     (lvm-make-array (lvm-stack-pop-args self (car operand) T))
      self)))
 
 
