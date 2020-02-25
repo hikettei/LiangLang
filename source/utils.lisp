@@ -3,6 +3,8 @@
 
 
 (defun copy-hash-table (hash-table)
+  (declare (optimize (speed 3) (safety 0)))
+  
   (let ((ht (make-hash-table 
              :test (hash-table-test hash-table)
              :rehash-size (hash-table-rehash-size hash-table)

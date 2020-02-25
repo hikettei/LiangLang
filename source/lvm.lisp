@@ -5,6 +5,20 @@
 (defparameter *LVMVersion* "0.1")
 
 
+(declaim (inline lvm-make-array
+                 lvm-exec-instruction
+                 has-variable?
+                 lvm-pushlist
+                 lvm-call-function
+                 lvm-stack-pop
+                 lvm-pushobject
+                 lvm-getlocal-variable
+                 lvm-pushprog
+                 lvm-make-newscope-withextending
+                 copy-hash-table
+                 lvm-register-variable))
+
+
 (defstruct LiangVMInfomation
   (sp 0)
   (started-at  "")
@@ -12,26 +26,32 @@
   (scopes (make-array 0 :adjustable t :fill-pointer 0)))
 
 
+(declaim (simple-vector stack))
+
 (defstruct LVMScope
-  (global-variable-table (make-hash-table))
-  (variable-table (make-hash-table))
-  (stack (make-array 0 :adjustable t :fill-pointer 0)))
+  (global-variable-table)
+  (variable-table)
+  (stack (make-array 1024 :initial-element NIL :fill-pointer 0)))
 
 
 (defstruct LVMFunction
-  (function-body)
-  (arg-symbols)
-  (name))
+  (function-body NIL :type list)
+  (arg-symbols NIL :type list)
+  (name NIL :type symbol))
 
 
 (defstruct LVMArray
-  (length)
-  (values)
-  (array-type nil))
+  (length 0 :type fixnum)
+  (values NIL :type list)
+  ;(array-type nil)
+  )
+
 
 
 (defun lvm-make-newscope ()
-  (let ((scope (make-LVMScope)))
+  (let ((scope (make-LVMScope
+                :global-variable-table (make-hash-table :test 'eq)
+                :variable-table (make-hash-table :test 'eq))))
 
     (lvm-define-function scope 'calllisp `(fname args) `(((:CALLLISP))))
 
@@ -39,12 +59,13 @@
 
 
 (defun lvm-make-newscope-withextending (base)
+  (declare (optimize (speed 3) (space 0) (safety 0)))
+  
   (make-LVMScope :global-variable-table
                  (slot-value base 'global-variable-table)
                  :variable-table
                  (copy-hash-table
                   (slot-value base 'variable-table))))
-
 
 (defun lvm-implements-function (x y self)
 
@@ -72,19 +93,16 @@
 
 
 (defmethod lvm-pushvalue (operand stack)
-  (vector-push-extend (first operand) stack))
+  (vector-push (first operand) stack))
 
 
 (defmacro lvm-stack-pop-args (self size &optional (use NIL))
-  `(reverse (loop for i from 1 to ,size
+  `(nreverse (loop for i from 1 to ,size
                  append (list (lvm-stack-pop ,self ,use)))))
 
 
 (defun lvm-stack-pop (self &optional (use NIL))
-
-  (when (= (length (slot-value self 'stack)) 0)
-    (error "StackUnderflow"))
-
+  
   (let* ((popped-value (vector-pop (slot-value self 'stack)))
          (value (if use
                     (if (typep popped-value 'symbol)
@@ -94,7 +112,8 @@
     value))
 
 (defun lvm-pushobject (obj self)
-  (vector-push-extend obj (slot-value self 'stack)))
+  (declare (optimize (speed 3) (safety 0)))
+  (vector-push obj (slot-value self 'stack)))
 
 
 (defun lvm-define-function (self name args iseq)
@@ -124,9 +143,9 @@
       ; Set arguments
 
       (dotimes (i (length args))
-        (lvm-register-variable (nth i arg-symbols)
+        (lvm-register-variable (elt arg-symbols i)
                                (lvm-evaluation-args
-                               (nth i args)
+                               (elt args i)
                                 self)
                                newscope))
 
@@ -138,12 +157,13 @@
       ; return value
 
 
-      (vector-push-extend (vector-pop newscopestack)
-                          basestack)
+      (vector-push (vector-pop newscopestack) basestack)
       NIl)))
 
 (defun lvm-calllisp (self)
 
+  (declare (optimize (speed 3) (space 0) (safety 0)))
+  
   (let* ((args  (lvm-getlocal-variable 'args  self))
         (fname (lvm-getlocal-variable 'fname self))
         (result (apply (if (typep fname 'string)
@@ -211,15 +231,16 @@
 
 (defun lvm-make-array (values)
   (make-LVMArray
-   :length (length values)
+   :length 0 ;(length values)
    :values values))
 
 
 (defun lvm-pushlist (operand self)
 
+  
   (with-slots (stack) self
     (lvm-pushobject
-     (lvm-make-array (lvm-stack-pop-args self (car operand) T))
+     (lvm-make-array (lvm-stack-pop-args self (first operand) T))
      self)))
 
 
