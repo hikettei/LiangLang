@@ -20,22 +20,18 @@
 
 
 (defstruct LiangVMInfomation
-  (sp 0)
-  (started-at  "")
-  (lvm-version "")
-  (scopes (make-array 0 :adjustable t :fill-pointer 0)))
+  (iseq)
+  (scopes (make-array 1 :adjustable T :fill-pointer 0)))
 
-
-(declaim (simple-vector stack))
 
 (defstruct LVMScope
-  (global-variable-table)
-  (variable-table)
-  (stack (make-array 1024 :initial-element NIL :fill-pointer 0)))
+  (global-variable-table (make-hash-table :test 'eq))
+  (variable-table (make-hash-table :test 'eq))
+  (stack (make-array 64 :initial-element NIL :fill-pointer 0)))
 
 
 (defstruct LVMFunction
-  (function-body NIL :type list)
+  (function-body NIL)
   (arg-symbols NIL :type list)
   (name NIL :type symbol))
 
@@ -47,19 +43,39 @@
   )
 
 
+(defmacro each-iseq (self iseq)
+  `(dolist (i ,iseq)
+    (lvm-exec-instruction i ,self)))
+
+(defun lvm-implement-default-function (self)
+
+  (lvm-include-lib "source/lib" self)
+  
+  (lvm-define-function self 'calllisp `(fname args) `(((:CALLLISP))))
+
+  (lvm-define-function self '+ `(x y) #'+)
+  (lvm-define-function self '- `(x y) #'-)
+  (lvm-define-function self '* `(x y) #'*)
+  (lvm-define-function self '/ `(x y) #'/)
+
+  (lvm-define-function self 'print `(x) #'print)
+  (lvm-define-function self 'equals `(x y) #'=)
+
+  (lvm-define-function self 'or `(x y) #'(lambda (x y) (or x y)))
+  (lvm-define-function self 'value_if `(x y z) #'(lambda (x y z)
+                                                   (if x y z))))
+
+
 
 (defun lvm-make-newscope ()
-  (let ((scope (make-LVMScope
-                :global-variable-table (make-hash-table :test 'eq)
-                :variable-table (make-hash-table :test 'eq))))
-
-    (lvm-define-function scope 'calllisp `(fname args) `(((:CALLLISP))))
-
+  (let ((scope (make-LVMScope)))
+    (lvm-implement-default-function scope)
     scope))
 
 
 (defun lvm-make-newscope-withextending (base)
-  (declare (optimize (speed 3) (space 0) (safety 0)))
+  (declare (optimize (speed 3) (space 0) (safety 0))
+           (type LVMScope base))
   
   (make-LVMScope :global-variable-table
                  (slot-value base 'global-variable-table)
@@ -68,7 +84,7 @@
                   (slot-value base 'variable-table))))
 
 (defun lvm-implements-function (x y self)
-
+  
   (let* ((fname (slot-value x 'name))
          (function (make-LVMFunction
                     :name fname
@@ -78,21 +94,22 @@
     (setf (gethash fname (slot-value self 'global-variable-table))
           function)))
 
-
-(defun lvm-register-variable (symbol-name symbol-value self)
-  (with-slots (variable-table) self
-
-    (cond
-      
-      ((and (typep symbol-name 'LVMFunction)
-            (typep symbol-value 'LVMFunction))
-       
-       (lvm-implements-function symbol-name symbol-value self))
-      
-      (T (setf (gethash symbol-name (slot-value self 'variable-table)) symbol-value)))))
+(defmethod lvm-register-variable ((symbol-name LVMFunction)
+                                  (symbol-value LVMFunction)
+                                  (self LVMScope))
+  
+  (lvm-implements-function symbol-name symbol-value self))
 
 
-(defmethod lvm-pushvalue (operand stack)
+(defmethod lvm-register-variable ((symbol-name symbol)
+                                  (symbol-value T)
+                                  (self LVMScope))
+  (setf (gethash symbol-name (slot-value self 'variable-table)) symbol-value))
+
+
+(defun lvm-pushvalue (operand stack)
+  (declare (type list operand)
+           (type vector stack))
   (vector-push (first operand) stack))
 
 
@@ -102,6 +119,8 @@
 
 
 (defun lvm-stack-pop (self &optional (use NIL))
+  (declare (optimize (speed 3) (safety 1))
+           (type LVMScope self))
   
   (let* ((popped-value (vector-pop (slot-value self 'stack)))
          (value (if use
@@ -112,19 +131,17 @@
     value))
 
 (defun lvm-pushobject (obj self)
-  (declare (optimize (speed 3) (safety 0)))
+  (declare (optimize (speed 3) (safety 0))
+           (type LVMScope self))
   (vector-push obj (slot-value self 'stack)))
 
 
 (defun lvm-define-function (self name args iseq)
+  (lvm-register-variable
+     name
+     (make-LVMFunction :name name :arg-symbols args :function-body iseq)
+     self))
 
-  (with-slots (global-variable-table) self
-
-    (lvm-register-variable
-     (make-LVMFunction :name name
-                       :arg-symbols args)
-     (make-LVMFunction :function-body iseq)
-     self)))
 
 (defmacro lvm-evaluation-args (arg self)
   `(if (typep ,arg 'symbol)
@@ -132,9 +149,17 @@
        ,arg))
 
 (defun lvm-call-function (function args self)
+  
   (with-slots (function-body arg-symbols) function
 
-
+    (if (typep function-body 'function)
+      (vector-push
+       (let* ((result (apply function-body (mapcar #'(lambda (x)
+                                        (lvm-evaluation-args x self))
+                                                   args))))
+         (if (eq result T) 1 result))
+       (slot-value self 'stack))
+    
     (let* ((newscope (lvm-make-newscope-withextending self))
            (newscopestack (slot-value newscope 'stack))
            (basestack     (slot-value self     'stack)))
@@ -149,16 +174,15 @@
                                 self)
                                newscope))
 
-      
-      (dolist (i (first function-body))
-          (lvm-exec-instruction i newscope))
 
+      (each-iseq newscope (first function-body))
 
       ; return value
 
 
-      (vector-push (vector-pop newscopestack) basestack)
-      NIl)))
+      (vector-push (vector-pop newscopestack) basestack))))
+  NIL)
+
 
 (defun lvm-calllisp (self)
 
@@ -178,16 +202,12 @@
 
 
 (defun lvm-getlocal-variable (name self)
-
-;  (with-slots (variable-table) self
-;    (if (gethash name variable-table)
-;        (gethash name variable-table)
-;        (error "The variable doesn't exist")))
-
-(has-variable? name self))
+  (has-variable? name self))
 
 
 (defun has-variable? (name self)
+  (declare (type symbol name) (type LVMScope self))
+  
   (with-slots (global-variable-table variable-table) self
     (or (gethash name variable-table)
         (gethash name global-variable-table))))
@@ -195,6 +215,9 @@
 
 (defun lvm-calldef (operand self)
 
+  (declare (type list operand)
+           (type LVMScope self))
+  
   (with-slots (stack) self
     
     (let* ((name (car operand))
@@ -218,6 +241,9 @@
 
 (defun lvm-pushdef (operand self)
 
+  (declare (type list operand)
+           (type LVMScope self))
+  
   (with-slots (stack) self
 
     (let* ((args (lvm-stack-pop-args self (second operand))))
@@ -235,49 +261,46 @@
    :values values))
 
 
-(defun lvm-pushlist (operand self)
-
-  
+(defun lvm-pushlist (operand self) 
   (with-slots (stack) self
     (lvm-pushobject
      (lvm-make-array (lvm-stack-pop-args self (first operand) T))
      self)))
 
 
-(defun lvm-loadfile-and-execute (filepath)
+(defun lvm-loadfile (filepath)
   (with-open-file (in (concatenate 'string filepath ".lvm")
                       :direction :input)
     (let ((buf (make-string (file-length in))))
       (read-sequence buf in)
       
-      (lvm-execute (read-from-string buf)))))
+      (make-LiangVMInfomation :iseq (read-from-string buf)))))
 
+(defun lvm-loadfile-and-execute (filepath)
+  (lvm-run (lvm-loadfile filepath)))
 
 (defun lvm-include-lib (filepath self)
   (with-open-file (in (concatenate 'string filepath ".lvm")
                       :direction :input)
+
     (let ((buf (make-string (file-length in))))
       (read-sequence buf in)
+      (each-iseq self (read-from-string buf)))))
 
-      (dolist (i (read-from-string buf))
-        (lvm-exec-instruction i self)))))
-
+(defun lvm-run (lvm-info) (lvm-execute (slot-value lvm-info 'iseq) lvm-info))
 
 (defun lvm-execute (iseq &optional (lvm-info (make-LiangVMInfomation)))
 
+  (with-slots (scopes) lvm-info
 
-  (with-slots (sp scopes) lvm-info
-
-
+      ; initialize main
+    
       (vector-push-extend (lvm-make-newscope) scopes)
-      
-      (lvm-include-lib "source/lib" (aref scopes 0))
-       
-       ; initialize main
 
-      (dolist (i iseq)
-        (lvm-exec-instruction i (aref scopes 0))))
-  lvm-info)
+      (each-iseq (aref scopes 0) iseq)
+      
+  lvm-info))
+
 
 (defun lvm-exec-instruction (iseq self)
 

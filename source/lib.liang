@@ -1,45 +1,10 @@
 
-print(str) = { calllisp("print", [str]) };
-
-
-equals(x,y) = {  calllisp("equal" , [x,y]) };
-
-
-read_from_string(x) = { calllisp("read-from-string", [x]) };
+true = 1;
+false = 0;
 
 
 
-+(x,y) = { calllisp("+", [x,y]) };
--(x,y) = { calllisp("-", [x,y]) };
-*(x,y) = { calllisp("*", [x,y]) };
-/(x,y) = { calllisp("/", [x,y]) };
-
-
-
-evallisp(x) = {
-  calllisp("eval", [read_from_string(x)])
-};
-
-
-
-evallisp("
-(progn
-(defun lvm-if (cond then else)
-  (if cond then else))
-
-(defun lvm-or (x y)
-  (or x y)))
-");
-
-
-
-or(x,y) = { calllisp("lvm-or", [x,y]) };
-
-
-
-if(cond, then_form, else_form) = {
-
-  result = calllisp("lvm-if", [cond, then_form, else_form]);
+if(cond, then, else) = {
+  result = value_if(cond, then, else);
   result()
-
 }
