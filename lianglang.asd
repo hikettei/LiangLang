@@ -12,4 +12,5 @@
 	       (:file "source/lex")
            (:file "source/tree")
            (:file "source/lvm")
-           (:file "source/liangc")))
+           (:file "source/liangc")
+           (:file "source/utils")))
