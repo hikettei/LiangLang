@@ -73,19 +73,23 @@
   
   (liangexp
 
-   (liang :+ liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
-   (liang :- liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
-   (liang :* liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
-   (liang :/ liang #'(lambda (x y z) `(:EXP ,y ,x ,z))))
+   (liang :+ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
+   (liang :- liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
+   (liang :* liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
+   (liang :/ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z))))
 
   (liangsyntax
    
-   (liang := liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
+   (liang := liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
 
    
    (:{ program :} #'(lambda (x y z)
                       (declare (ignore x z))
-                      `(:PROG ,y)))
+                      `(:LAMBDA NIL ,y)))
+
+   (:|(| parse-args :|)| :{ program :} #'(lambda (x args y z body _)
+                                           (declare (ignore x y z _))
+                                           `(:LAMBDA ,args ,body)))
 
 
    (:|(| liang :|)| #'(lambda (x y z)
