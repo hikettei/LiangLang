@@ -1,5 +1,5 @@
 
-(in-package #:liang)
+(in-package #:liang.lvm)
 
 
 
@@ -13,15 +13,8 @@
   (args)
   (body))
 
-(defun liang-register-builtin-methods (compile-data)
-  (dolist (i *built-in-methods*)
-    (liang-name2id compile-data (slot-value compile-data 'name2id) i))
-  
-  compile-data)
-
 
 (defun lvm-implements-builtin-function (vm index args lambda)
-
   (lvm-set-local-variable vm index index (make-LVMBuiltInFunction
                                                :args args
                                                :body lambda)))

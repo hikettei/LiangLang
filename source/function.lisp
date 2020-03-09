@@ -1,5 +1,5 @@
 
-(in-package #:liang)
+(in-package #:liang.lvm)
 
 
 (defstruct LVMFunction

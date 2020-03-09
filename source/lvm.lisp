@@ -1,9 +1,14 @@
 
-(in-package #:liang)
+(defpackage #:liang.lvm
+  (:use :cl)
+
+  (:export #:lvm-init-vm
+           #:lvm-execute-vm))
+
+(in-package #:liang.lvm)
 
 
 (defparameter *LVMSTACKSIZE* 3000)
-
 
 (defstruct LVM
   (program-register)
@@ -37,9 +42,6 @@
     
     vm))
 
-(defun lvm-init-vm-script (compile-data)
-  (lvm-init-vm (slot-value compile-data 'iseq)
-               (slot-value compile-data 'self-field-size)))
 
 (defun lvm-push-stack (vm value)
   (vector-push value (slot-value vm 'stack)))
@@ -98,9 +100,7 @@
 
 
 (defun lvm-push-lambda (vm operand)
-  (let ((arg-size   (elt operand 0))
-        (body-size  (elt operand 1))
-        (field-size (elt operand 2)))
+  (destructuring-bind (arg-size body-size field-size) operand
 
     (lvm-push-stack vm (lvm-make-function vm body-size arg-size field-size))
     
