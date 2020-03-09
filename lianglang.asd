@@ -5,12 +5,17 @@
   :license "MIT"
   :version "0.1"
   :description "Liang Programming Language"
-  :depends-on (#:yacc #:cl-lex #:cl-ansi-text)
+  :depends-on (#:yacc #:cl-lex #:alexandria #:cl-ppcre)
   :serial t
   :components ( 
 	       (:file "source/package")
-	       (:file "source/lex")
-           (:file "source/tree")
+           (:file "source/function")
+           (:file "source/liang")
            (:file "source/lvm")
+           (:file "source/utils")
+           (:file "source/variable")
+           (:file "source/builtin")
            (:file "source/liangc")
-           (:file "source/utils")))
+           (:file "source/gencode")
+           (:file "source/lex")
+           (:file "source/tree")))
