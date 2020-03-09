@@ -24,7 +24,5 @@
 
 
 (defun compile-to-lvm (source)
-  (let ((tree (gentree source)))
-    (loop for i from 0 to (1- (length tree))
-          append (tree2iseq (elt tree i)))))
+  (compile-body-to-lvm (gentree source)))
 
