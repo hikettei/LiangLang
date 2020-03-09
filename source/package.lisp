@@ -2,14 +2,9 @@
 (in-package :cl-user)
 
 
-
 (defpackage #:liang
 
   (:use :cl)
-
-  (:import-from
-    #:cl-ansi-text
-    #:red)
 
   (:import-from
     #:yacc
@@ -18,6 +13,10 @@
 
   (:import-from #:cl-lex)
 
-  (:export :liangc :gentree
-           :liang-compile-file
-           :lvm-loadfile-and-execute))
+  (:import-from #:cl-ppcre)
+
+  (:import-from #:alexandria
+                #:make-hash-table)
+  
+  (:export #:liang-compile-program #:*MNEMONIC* #:mnemonic #:*BuiltInMethods*))
+

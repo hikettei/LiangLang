@@ -1,6 +1,6 @@
 
 
-(in-package #:liang)
+(in-package #:liang.compiler)
 
 
 
@@ -37,7 +37,8 @@
               :COMMA
               :DOT
               :END
-              
+
+              :at-mark
               :macro-body
               :funame
               :name))
@@ -57,7 +58,8 @@
 
   (liang
    liangsyntax
-   liangsymbol)
+   liangsymbol
+   lambdas)
 
   (liangsymbol
    liangnames
@@ -72,25 +74,40 @@
   (liangnamelist :+ :- :* :/ :funame :name :=)
   
   (liangexp
-
+   (liang liangnames liang #'(lambda (x y z) `(:EXP ,y ,x ,z))) 
    (liang :+ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :- liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :* liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :/ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z))))
 
-  (liangsyntax
-   
-   (liang := liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
-
-   
+  (lambdas
    (:{ program :} #'(lambda (x y z)
                       (declare (ignore x z))
                       `(:LAMBDA NIL ,y)))
-
    (:|(| parse-args :|)| :{ program :} #'(lambda (x args y z body _)
                                            (declare (ignore x y z _))
-                                           `(:LAMBDA ,args ,body)))
+                                           `(:LAMBDA ,args,body))))
+  
+  (liangsyntax
+   
+   (liang := liang #'(lambda (x y z) `(:SETQ ,y ,x ,z)))
 
+   liangexp
+   
+   (:at-mark liangnames liangnames :|(| :|)| lambdas
+               #'(lambda (n name name0 x y body)
+                   (declare (ignore n x y))
+                   `(:CALLDEF ,name ,name0 NIL ,body)))
+
+   (:at-mark liangnames liangnames :|(| args :|)| lambdas
+               #'(lambda (n name name0 x args z body)
+                   (declare (ignore n x z))
+                   `(:CALLDEF ,name ,name0 ,args ,body)))
+
+   (:at-mark liangnames :|(| liang :|)| :{ program :} #'(lambda (fname n x args y z body _)
+                                                      (declare (ignore n x y z _))
+                                                      `(:CALLDEF ,fname ,args ,body)))
+   
 
    (:|(| liang :|)| #'(lambda (x y z)
                         (declare (ignore x z))
@@ -109,10 +126,7 @@
                          (declare (ignore x z))
 
                          `(:INSTANT-STRUCTURE ,y)))
-                      
-   (liang liangnames liang
-               #'(lambda (x y z) `(:exp ,y ,x ,z)))
-
+   
    (liang :DOT liang #'(lambda (x y z) `(:exp ,y ,x ,z)))
 
    (liangnames :|(| :|)| #'(lambda (name x y )
@@ -123,8 +137,10 @@
    (liangnames :|(| parse-args :|)| #'(lambda (name x args y)
                                         (declare (ignore x y))
 
-                                        `(:CALLDEF ,name ,args)))
-   liangexp)
+                                        `(:CALLDEF ,name ,args))))
+
+  (args
+   parse-args)
   
   (parse-args
    (liang #'list)
