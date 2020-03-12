@@ -67,11 +67,13 @@
 
 (defun returnself (vm)
   (with-slots (stack variable-size ep pc) vm
-    (let ((self (aref stack (1- ep))))
-      (dotimes (_ ep) (vector-pop stack))
+    (let* ((self (aref stack (1- ep)))
+           (sep  (Self-callerep self)))
+      (dotimes (_ (- ep sep -1)) (vector-pop stack))
       (with-slots (returnp callerep) self
         (setf ep callerep)     
-        (setf pc returnp)))))
+        (setf pc returnp)
+        NIL))))
 
 (defun stack-push (vm value)
   (vector-push value (slot-value vm 'stack)))
@@ -119,7 +121,7 @@
                               (set-variable vm x y))
        '1)
       
-      (,(mnemonic :RETURN) (returnself vm) '1)
+      (,(mnemonic :RETURN) (returnself vm) '0)
       (T (print "Unimplemented opecode")
        (print opecode) '1)))))
 
