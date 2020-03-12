@@ -2,29 +2,35 @@
 (in-package #:liang.compiler)
 
 
-(defvar *variable-names* (make-hash-table :test 'eq))
+(defvar *variable-names* (make-hash-table :test 'equal))
 (defvar *compile-errors* (make-array 0 :adjustable T))
 
-(defun variable-names (&optional name)
-  (gethash name *variable-names*))
+(defparameter *BuiltInMethods* `(= + - * / print value_if equals or))
 
-(defun (setf variable-names) (_ &optional name)
+(defun variable-names (&optional name)
+  (gethash (write-to-string name) *variable-names*))
+
+(defun (setf variable-names) (_ &optional name0)
   (declare (ignore _))
-  (let ((val (gethash name *variable-names*)))
+  (let* ((name (write-to-string name0))
+         (val (gethash name *variable-names*)))
     (if val val
         (setf (gethash name *variable-names*) (hash-table-count *variable-names*)))))
 
-(dolist (i liang:*BuiltInMethods*)
+(dolist (i *BuiltInMethods*)
   (setf (variable-names i) NIL))
 
 (defmacro thirdcar (list)
   `(car (third ,list)))
 
+(defmacro ssecond (list)
+  `(second (second ,list)))
+
 (defmacro thirdsec (list)
   `(second (third ,list)))
 
 (defun iseq-builder (name &rest operand)
-  `((,(liang:mnemonic name) ,@operand)))
+  `((,(mnemonic name) ,@operand)))
 
 (defmacro append-iseq (target iseq)
   `(setq ,target (nconc ,target ,iseq)))
@@ -51,7 +57,7 @@
     (with-generate-iseq i
       (generate-tree-to-iseq i y)
       (generate-tree-to-iseq i z)
-      (generate-iseq i :SENDEXP (variable-names x)))))
+      (generate-iseq i :SENDEXP (variable-names (second x))))))
 
 (defmacro compile-args (target args)
   `(dolist (argument ,args)
@@ -63,6 +69,7 @@
   (destructuring-bind (_ name args) tree
     (declare (ignore _))
     (with-generate-iseq i
+      (setf (variable-names (second name)) NIL)
       (compile-args i args)
       (generate-iseq i opename (variable-names (second name)) (length args)))))
 
@@ -77,21 +84,21 @@
          (progn
            (setf (thirdcar tree) :PUSHDEF)
            (setf (variable-names (second (thirdsec tree))) NIL))
-         (setf (variable-names (third tree)) NIL))
-     (gencode-exp tree))
-
+         (setf (variable-names (second (third tree))) NIL))
+     (with-generate-iseq i
+       (generate-tree-to-iseq i (third  tree))
+       (generate-tree-to-iseq i (fourth tree))
+       (generate-iseq i :SETQ)))
     (:EXP (gencode-exp tree))
     (:PUSHDEF (gencode-fn :PUSHDEF tree))
     (:CALLDEF (gencode-fn :SENDFN tree))
-
     (:LAMBDA (destructuring-bind (_ args body) tree
                (declare (ignore _))
                (let ((compiledbody (compile-body-to-lvm body)))
                  (with-generate-iseq i
                    (compile-args i args)
+                   (generate-iseq i :PUSHLAMBDA (1+ (length compiledbody)) (length args))
                    (append-iseq i compiledbody)
-                   (generate-iseq i :RETURN)
-                   (generate-iseq i :PUSHLAMBDA (1+ (length compiledbody)) (length args))))))
-    
+                   (generate-iseq i :RETURN)))))
     (T (print tree) NIL)))
 

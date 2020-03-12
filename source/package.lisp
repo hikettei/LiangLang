@@ -17,6 +17,14 @@
 
   (:import-from #:alexandria
                 #:make-hash-table)
+
+  (:import-from #:liang.lvm
+                #:initvm
+                #:vmrun)
   
-  (:export #:liang-compile-program #:*MNEMONIC* #:mnemonic #:*BuiltInMethods*))
+  (:import-from #:liang.compiler
+                #:compile-to-lvm
+                #:*variable-names*)
+  
+  (:export #:liang-execute-code))
 

@@ -2,65 +2,56 @@
 (in-package #:liang.lvm)
 
 
-(defstruct LVMSymbol
-  (name NIL :type fixnum)
-  (nameofid NIL :type fixnum))
-
-(defstruct LVMVariable
-  (value)
-  (nameofid NIL :type fixnum))
+(defstruct VMUndefinedVariable)
+(defstruct VMVariable
+  (value))
+(defstruct VMVariableIndex
+  (i NIL :type fixnum))
 
 
-(defun lvm-set-local-variable (vm index name value)
+(defun setlocalvariable (vm index value)
   (with-slots (stack ep) vm
-    (setf (aref stack (+ ep index)) (make-LVMVariable
-                                     :value value
-                                     :nameofid name))))
+    (setf (aref stack (+ ep index)) (make-VMVariable :value value)))
+  NIL)
 
-
-(defun lvm-get-local-variable (vm index)
+(defun getlocalvariable (vm index)
+  (declare (fixnum index))
   (with-slots (stack ep) vm
-    (slot-value (aref stack (+ ep index)) 'value)))
+    (aref stack (+ ep index))))
 
-
-(defmethod lvm-set-variable ((vm LVM) (index LVMSymbol) (value T))
-  (lvm-set-local-variable vm (slot-value index 'name)
-                             (slot-value index 'nameofid) value))
-
-(defmethod lvm-set-variable ((vm LVM) (index LVMFunctionObject) (value LVMFunction))
-  (setf (slot-value value 'args) (slot-value index 'args))
-  (lvm-set-local-variable vm (slot-value index 'name)
-                             (slot-value index 'nameofid) value))
-                          
-
-(defun lvm-find-variable (vm target-symbol &optional (next-self NIL))  
+(defmethod findvariable (vm (index number))
   (with-slots (stack ep) vm
+    (labels ((check_before (i)
+               (setf ep i)
+               (if (eq i -1) (error "Undefined Variable"))
+               (let ((variable (getlocalvariable vm index))
+                     (beforeself (aref stack (1- i))))
+                 (cond
+                   ((typep variable 'VMUndefinedVariable)
+                    (check_before (slot-value beforeself 'callerep)))
+                   ((typep variable 'VMVariable)
+                    variable)
+                   (T (error "VMError"))))))
+      (let* ((eptmp ep)
+             (result (check_before ep)))
+        (setf ep eptmp)
+        (VMVariable-value result)))))
 
-    (let ((target-self (aref stack (if next-self
-                                       next-self
-                                       (1- ep))))
-          (target-var-id (slot-value target-symbol 'name))
-          (target-var-name (slot-value target-symbol 'nameofid)))
+(defmethod findvariable (vm (index VMVariableIndex))
+  (findvariable vm (slot-value index 'i)))
 
+; x=y
+(defmethod set-variable (vm (x VMVariableIndex) (y T))
+  (setlocalvariable vm (VMVariableIndex-i x) y)
+  NIL)
 
-      (with-slots (caller-ep field-size) target-self
-        
-        (let ((result (if (<= target-var-id field-size)
+(defmethod set-variable (vm (x LVMFunction) (y LVMLambda))
+  (with-slots (args content-at content-size) y
+    (setlocalvariable vm (slot-value x 'index) (make-LVMFunction
+                                                :index (slot-value x 'index)
+                                                :content-at content-at
+                                                :content-size content-size
+                                                :args (or (slot-value x 'args)
+                                                          (slot-value y 'args)))))
+  NIL)
 
-                          (let ((var (aref stack (+ (if next-self
-                                                        caller-ep
-                                                        ep)
-                                                    target-var-id))))
-                       
-                          (if (typep var 'LVMVariable)
-                                (if (eq (slot-value var 'nameofid)
-                                        target-var-name)
-                                    var))))))
-
-          (if result
-              (slot-value result 'value)
-              (if (eq next-self 0)
-                  (error "undefined variable")
-                  (lvm-find-variable vm target-symbol (1- caller-ep)))))))))
-
-      

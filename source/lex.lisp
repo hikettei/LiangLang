@@ -1,6 +1,6 @@
 
 
-(in-package #:liang)
+(in-package #:liang.compiler)
 
 
 
@@ -35,6 +35,7 @@
     
   ("," (return (values :COMMA :COMMA)))
   ("\\." (return (values :DOT :DOT)))
+  ("@" (return (values :AT-MARK :AT-MARK)))
   
   ("[a-zA-Z||0-9||_||\\!||\\?]+" (return (values :funame (read-from-string $@))))
   ("[\\S]+" (return (values :name (read-from-string $@)))))

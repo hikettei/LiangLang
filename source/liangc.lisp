@@ -1,6 +1,4 @@
 
-(in-package #:liang)
-
 (defpackage #:liang.compiler
 
   (:use #:cl)
@@ -10,19 +8,25 @@
                 #:define-parser
                 #:parse-with-lexer)
 
-  (:import-from #:liang
+  (:import-from #:liang.lvm
                 #:*MNEMONIC*
                 #:mnemonic)
    
   (:export
    #:gentree
-   #:compile-to-lvm))
+   #:compile-to-lvm
+   #:*variable-names*))
 
 
 
 (in-package #:liang.compiler)
 
 
-(defun compile-to-lvm (source)
-  (compile-body-to-lvm (gentree source)))
+(defun compile-to-lvm (source &optional (use-library? T))
+  (with-generate-iseq i
+    (when use-library?
+      (dolist (n (gentree (read-file-sequence "source/lib.liang")))
+        (generate-tree-to-iseq i n)))
+    (dolist (n (gentree source)) (generate-tree-to-iseq i n))
+    (generate-iseq i :RETURN)))
 
