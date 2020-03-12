@@ -21,7 +21,7 @@
     (let ((fargs (genlist-withpop vm arg-size T))
           (func  (findvariable vm index)))
       (cond
-        ((typep func 'LVMFunction)
+        ((or (typep func 'LVMFunction) (typep func 'LVMLambda))
          (with-slots (content-at content-size args) func
            (setself vm (1+ pc))
            (dotimes (i (length args)) (set-variable vm (elt args i) (elt fargs i)))
