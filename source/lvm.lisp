@@ -21,10 +21,8 @@
    :SETQ 12
    :RETURN 30)))
 
-
-(defmacro mnemonic (mnemonic) 
+(defmacro mnemonic (mnemonic)
   `(gethash ,mnemonic *MNEMONIC*))
-
 
 (defstruct LVM
   (iseq)
@@ -33,14 +31,12 @@
   (variable-size NIL :type fixnum)
   (stack))
 
-
 (defstruct Self
   (returnp NIL :type fixnum)
-  (callerep NIL :type fixnum))
-
+  (callerep NIL :type fixnum)
+  (stacksize NIL :type fixnum))
 
 (defparameter *STACKSIZE* 3000)
-
 
 (defun initvm (iseq variable-size)
   (let ((vm (make-LVM :iseq iseq :variable-size variable-size
@@ -55,24 +51,26 @@
     (set-defaultbuiltinmethods vm)
     vm))
 
-
 (defun setself (vm returnp)
   (with-slots (stack variable-size ep) vm
     (vector-push (make-Self :returnp returnp
-                            :callerep ep)
+                            :callerep ep
+                            :stacksize (fill-pointer stack))
                  stack)
     (setf ep (fill-pointer stack))
-    (dotimes (_ variable-size) (vector-push (make-VMUndefinedVariable) stack)))
+    (dotimes (_ variable-size) (vector-push NIL stack)))
   NIL)
 
 (defun returnself (vm)
   (with-slots (stack variable-size ep pc) vm
     (let* ((self (aref stack (1- ep)))
-           (sep  (Self-callerep self)))
-      (dotimes (_ (- ep sep -1)) (vector-pop stack))
+           (ssize (Self-stacksize self))
+           (rval (stack-pop vm T)))
+      (setf (fill-pointer stack) ssize)
       (with-slots (returnp callerep) self
-        (setf ep callerep)     
+        (setf ep callerep)
         (setf pc returnp)
+        (stack-push vm rval)
         NIL))))
 
 (defun stack-push (vm value)
@@ -95,7 +93,7 @@
    (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
           (opecode (car i))
           (operand (cdr i)))
-
+     
     (case opecode
       (,(mnemonic :PUSHNUMBER) (stack-push vm (car operand)) '1)
       (,(mnemonic :PUSHSTRING) (stack-push vm (car operand)) '1)
@@ -113,7 +111,7 @@
                                                  :content-at (1+ (slot-value vm 'pc))
                                                  :content-size size
                                                  :args (genlist-withpop vm args)))
-                                 (+ size 1)))
+                                 (1+ size)))
       
       (,(mnemonic :SENDEXP) (send vm (car operand) 2))
       (,(mnemonic :SENDFN)  (send vm (car operand) (second operand)))
