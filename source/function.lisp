@@ -28,7 +28,7 @@
            (- content-at pc)))
         ((typep func 'LVMBuiltIn)
          (stack-push vm (apply (slot-value func 'body) fargs)) '1)
-        (T (error "The called object isn't function"))))))
+        (T (error "The called object isn't a function"))))))
 
 (defun set-builtinmethod (vm index args-size lambda)
   (set-variable vm (make-VMVariableIndex :i index)
