@@ -9,6 +9,8 @@
 
 (in-package #:liang.lvm)
 
+(declaim (inline stack-push))
+
 (defparameter *MNEMONIC*
   (alexandria:plist-hash-table
   `(:PUSHNUMBER 0
@@ -19,7 +21,7 @@
    :SENDEXP 10
    :SENDFN 11
    :SETQ 12
-   :RETURN 30)))
+    :RETURN 30)))
 
 (defmacro mnemonic (mnemonic)
   `(gethash ,mnemonic *MNEMONIC*))
