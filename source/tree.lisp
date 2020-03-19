@@ -94,18 +94,13 @@
 
    liangexp
    
-   (:at-mark liangnames liangnames :|(| :|)| lambdas
-               #'(lambda (n name name0 x y body)
-                   (declare (ignore n x y))
-                   `(:CALLDEF ,name ,name0 NIL ,body)))
+   (:at-mark liangnames liang lambdas
+               #'(lambda (n name name0 body)
+                   (declare (ignore n))
+                   `(:CALLDEF ,name ,name0 ,body)))
 
-   (:at-mark liangnames liangnames :|(| args :|)| lambdas
-               #'(lambda (n name name0 x args z body)
-                   (declare (ignore n x z))
-                   `(:CALLDEF ,name ,name0 ,args ,body)))
-
-   (:at-mark liangnames :|(| liang :|)| lambdas #'(lambda (n fname x args y body)
-                                                      (declare (ignore n x y))
+   (:at-mark liangnames :|(| liang :{{ program :} #'(lambda (n fname x args y body z)
+                                                      (declare (ignore n x y z))
                                                       `(:CALLDEF ,fname ,args ,body)))
 
    lambdas
