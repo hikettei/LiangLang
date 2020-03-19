@@ -21,6 +21,7 @@
               :|(|
               :|)|
 
+              :{{
               :{
               :}
 
@@ -58,8 +59,7 @@
 
   (liang
    liangsyntax
-   liangsymbol
-   lambdas)
+   liangsymbol)
 
   (liangsymbol
    liangnames
@@ -84,8 +84,8 @@
    (:{ program :} #'(lambda (x y z)
                       (declare (ignore x z))
                       `(:LAMBDA NIL ,y)))
-   (:|(| parse-args :|)| :{ program :} #'(lambda (x args y z body _)
-                                           (declare (ignore x y z _))
+   (:|(| parse-args :{{ program :} #'(lambda (x args y body _)
+                                           (declare (ignore x y _))
                                            `(:LAMBDA ,args,body))))
   
   (liangsyntax
@@ -104,11 +104,11 @@
                    (declare (ignore n x z))
                    `(:CALLDEF ,name ,name0 ,args ,body)))
 
-   (:at-mark liangnames :|(| liang :|)| :{ program :} #'(lambda (fname n x args y z body _)
-                                                      (declare (ignore n x y z _))
+   (:at-mark liangnames :|(| liang :|)| lambdas #'(lambda (n fname x args y body)
+                                                      (declare (ignore n x y))
                                                       `(:CALLDEF ,fname ,args ,body)))
-   
 
+   lambdas
    (:|(| liang :|)| #'(lambda (x y z)
                         (declare (ignore x z))
                         y))
@@ -116,16 +116,14 @@
    ; structure
 
 
-   (funame :[ parse-args :] #'(lambda (name x y z)
+   (:funame :[ parse-args :] #'(lambda (name x y z)
                                 (declare (ignore x z))
 
-                                `(:STRUCTURE ,name ,y)))
-
+                                `(:ARRAYWITHNAME ,name ,y)))
    
    (:[ parse-args :] #'(lambda (x y z)
                          (declare (ignore x z))
-
-                         `(:INSTANT-STRUCTURE ,y)))
+                         `(:ARRAY ,y)))
    
    (liang :DOT liang #'(lambda (x y z) `(:exp ,y ,x ,z)))
 

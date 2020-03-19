@@ -13,6 +13,7 @@
   ("###\"([^\\\"]|\\.)*?\"( |\\n)\"([^\\\"]|\\.)*?\"###"
    (return (values :macro-body (string-trim "###" $@))))
 
+  ("(\\)(|\\s){)" (return (values :{{ :{{)))
   
   ("}"    (return (values :} :})))
   ("{"    (return (values :{ :{)))
