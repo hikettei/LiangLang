@@ -84,7 +84,11 @@
    (:{ program :} #'(lambda (x y z)
                       (declare (ignore x z))
                       `(:LAMBDA NIL ,y)))
-   (:|(| parse-args :{{ program :} #'(lambda (x args y body _)
+   (:|(| liangnames :{{ program :} #'(lambda (x args y body _)
+                                       (declare (ignore x y _))
+                                       `(:LAMBDA ,args ,body)))
+   
+   (:|(| args1 :{{ program :} #'(lambda (x args y body _)
                                            (declare (ignore x y _))
                                            `(:LAMBDA ,args ,body))))
   
@@ -94,17 +98,13 @@
 
    liangexp
    
-   (:at-mark liangnames liang lambdas
-               #'(lambda (n name name0 body)
+   (:at-mark liangnames parse-args2
+               #'(lambda (n name name0)
                    (declare (ignore n))
-                   `(:CALLDEF ,name ,name0 ,body)))
-
-   (:at-mark liangnames :|(| liang :{{ program :} #'(lambda (n fname x args y body z)
-                                                      (declare (ignore n x y z))
-                                                      `(:CALLDEF ,fname ,(append `(,args)
-                                                                          `((:LAMBDA NIL ,body))))))
+                   `(:CALLDEF ,name ,name0)))
 
    lambdas
+      
    (:|(| liang :|)| #'(lambda (x y z)
                         (declare (ignore x z))
                         y))
@@ -135,6 +135,22 @@
 
   (args
    parse-args)
+
+  (parse-args2
+   (liang #'list)
+   (liang :COMMA parse-args2 #'(lambda (x y z)
+          (declare (ignore y))
+                   (cons x z))))
+  
+  (args1
+   parse-args1)
+  
+  (parse-args1
+   (liangnames #'list)
+   (liangnames :COMMA parse-args1
+               #'(lambda (x y z)
+                   (declare (ignore y))
+                   (cons x z))))
   
   (parse-args
    (liang #'list)
