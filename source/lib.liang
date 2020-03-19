@@ -2,9 +2,12 @@
 true = 1;
 false = 0;
 
-
-
 if(cond, then, else) = {
   result = value_if(cond, then, else);
+  result()
+};
+
+when(cond, then) = {
+  result = value_if(cond, then, { false });
   result()
 }

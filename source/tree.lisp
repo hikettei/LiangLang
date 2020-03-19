@@ -86,7 +86,7 @@
                       `(:LAMBDA NIL ,y)))
    (:|(| parse-args :{{ program :} #'(lambda (x args y body _)
                                            (declare (ignore x y _))
-                                           `(:LAMBDA ,args,body))))
+                                           `(:LAMBDA ,args ,body))))
   
   (liangsyntax
    
@@ -101,7 +101,8 @@
 
    (:at-mark liangnames :|(| liang :{{ program :} #'(lambda (n fname x args y body z)
                                                       (declare (ignore n x y z))
-                                                      `(:CALLDEF ,fname ,args ,body)))
+                                                      `(:CALLDEF ,fname ,(append `(,args)
+                                                                          `((:LAMBDA NIL ,body))))))
 
    lambdas
    (:|(| liang :|)| #'(lambda (x y z)
