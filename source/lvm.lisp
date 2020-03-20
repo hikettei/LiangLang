@@ -28,9 +28,10 @@
 
 (defstruct LVM
   (iseq)
-  (ep 0)
-  (pc 0)
+  (ep 0 :type fixnum)
+  (pc 0 :type fixnum)
   (variable-size NIL :type fixnum)
+  (fp 0 :type fixnum)
   (stack))
 
 (defstruct Self
@@ -42,9 +43,9 @@
 
 (defun initvm (iseq variable-size)
   (let ((vm (make-LVM :iseq iseq :variable-size variable-size
-                      :stack (make-array *STACKSIZE* :fill-pointer 0 :initial-element NIL))))
+                      :stack (make-array 3000 :initial-element NIL))))
 
-    ;initialize main 
+    ;initialize main
 
     (setself vm (1+ (length iseq)))
 
@@ -54,21 +55,21 @@
     vm))
 
 (defun setself (vm returnp)
-  (with-slots (stack variable-size ep) vm
-    (vector-push (make-Self :returnp returnp
-                            :callerep ep
-                            :stacksize (fill-pointer stack))
-                 stack)
-    (setf ep (fill-pointer stack))
-    (dotimes (_ variable-size) (vector-push NIL stack)))
-  NIL)
+  (with-slots (stack variable-size ep fp) vm
+    (stack-push vm (make-Self :returnp returnp
+                             :callerep ep
+                             :stacksize fp))
+    
+    (setf ep fp)
+    (setf fp (+ fp variable-size))
+  NIL))
 
 (defun returnself (vm)
-  (with-slots (stack variable-size ep pc) vm
+  (with-slots (stack variable-size ep pc fp) vm
     (let* ((self (aref stack (1- ep)))
            (ssize (Self-stacksize self))
            (rval (stack-pop vm T)))
-      (setf (fill-pointer stack) ssize)
+      (setf fp ssize)
       (with-slots (returnp callerep) self
         (setf ep callerep)
         (setf pc returnp)
@@ -76,15 +77,19 @@
         NIL))))
 
 (defun stack-push (vm value)
-  (vector-push value (slot-value vm 'stack)))
+  (let ((fp (LVM-fp vm)))
+    (setf (LVM-fp vm) (1+ fp))
+    (setf (aref (LVM-stack vm) fp) value)
+    fp))
 
 (defun stack-pop (vm &optional (use NIL))
-  (if use
-      (let ((val (vector-pop (slot-value vm 'stack))))
-        (if (typep val 'VMVariableIndex)
-            (findvariable vm val)
-            val))
-      (vector-pop (slot-value vm 'stack))))
+  (setf (LVM-fp vm) (1- (LVM-fp vm)))
+  (let ((value (aref (LVM-stack vm) (LVM-fp vm))))
+    (if use
+        (if (typep value 'VMVariableIndex)
+            (findvariable vm value)
+            value)
+        value)))
 
 (defun genlist-withpop (vm size &optional (use NIL))
   (reverse (loop for i from 1 to size
@@ -130,7 +135,6 @@
     (let ((iseqsize (length iseq)))
       (setq pc 0)
       (setq ep 1)
-
       (loop :while (< pc iseqsize)
             :do (let ((x (executevm vm)))
                   (setq pc (+ pc x)))))))

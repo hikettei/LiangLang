@@ -26,5 +26,5 @@
                 #:compile-to-lvm
                 #:*variable-names*)
   
-  (:export #:liang-execute-code))
+  (:export #:liang-execute-code #:liang-execute-file))
 
