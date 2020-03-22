@@ -5,37 +5,14 @@ exec ros -Q -- $0 "$@"
 |#
 (progn ;;init forms
   (ros:ensure-asdf)
-  (asdf:load-system :lianglang)
-  ;;#+quicklisp(ql:quickload '() :silent t)
+  #+quicklisp(ql:quickload '(lianglang) :silent t)
   )
 
-(in-package :liang)
 
-(defun show-help ()
-  (princ "liang [compile run compile-run] path args")
-  (princ #\newline))
-
-(defun main (&rest argv)
-
-  
-  (if (<= (length argv) 1)
-      (show-help)
-
-      (let ((arg (first argv))
-            (path (second argv)))
-
-        (cond
-          ((equal arg "compile")
-           (liang-compile-file path))
-
-          ((equal arg "run")
-           (lvm-loadfile-and-execute path))
-
-          ((equal arg "compile-run")
-           (liang-compile-file path)
-           (lvm-loadfile-and-execute path))
-
-          (T (show-help)))))
-  (princ #\newline))
+(defun main (&optional command &rest args)
+  (cond
+    ((equal command "scr")
+     (liang:liang-execute-file (car args))))
+  '#\newline)
 
 ;;; vim: set ft=lisp lisp:

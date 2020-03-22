@@ -12,13 +12,12 @@
   :pathname "source"
   :components ((:file "liang" :depends-on ("package"))
                (:file "package" :depends-on ("lvm" "liangc"))
-
                (:file "lvm")
                (:file "variable" :depends-on ("lvm" "function"))
                (:file "function" :depends-on ("lvm"))
-               
                (:file "liangc" :depends-on  ("lvm"))
                (:file "lex"    :depends-on  ("liangc"))
                (:file "tree"   :depends-on  ("liangc"))
                (:file "gencode" :depends-on ("liangc" "lvm"))
+               (:file "compiler" :depends-on ("liangc"))
                (:file "utils" :depends-on   ("liangc"))))
