@@ -15,6 +15,7 @@
   (:export
    #:gentree
    #:compile-to-lvm
+   #:compile-to-lvm-byfile
    #:*variable-names*))
 
 
@@ -24,9 +25,10 @@
 
 (defun compile-to-lvm (source &optional (use-library? T))
   (with-generate-iseq i
-    (when use-library?
-      (dolist (n (gentree (read-file-sequence "source/lib.liang")))
-        (generate-tree-to-iseq i n)))
+    (if use-library?
+        (append-liang-file i "source/lib.liang"))
     (dolist (n (gentree source)) (generate-tree-to-iseq i n))
     (generate-iseq i :RETURN)))
 
+(defun compile-to-lvm-byfile (path)
+  (compile-to-lvm (read-file-sequence path)))

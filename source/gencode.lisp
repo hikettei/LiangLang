@@ -20,6 +20,10 @@
 (dolist (i *BuiltInMethods*)
   (setf (variable-names i) NIL))
 
+(defmacro append-liang-file (target path)
+  `(dolist (files-ast (gentree (read-file-sequence ,path)))
+     (generate-tree-to-iseq ,target files-ast)))
+
 (defmacro thirdcar (list)
   `(car (third ,list)))
 
