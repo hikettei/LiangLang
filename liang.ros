@@ -12,7 +12,12 @@ exec ros -Q -- $0 "$@"
 (defun main (&optional command &rest args)
   (cond
     ((equal command "scr")
-     (liang:liang-execute-file (car args))))
+     (liang:liang-execute-file (car args)))
+    ((equal command "compile")
+     (liang:liang-compilefile-write (first args) (second args)))
+    ((equal command "run")
+     (let ((vm (liang.lvm:load-lvm-structure (car args))))
+       (liang:liang-runvm vm))))
   '#\newline)
 
 ;;; vim: set ft=lisp lisp:

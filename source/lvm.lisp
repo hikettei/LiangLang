@@ -1,9 +1,15 @@
 
 (defpackage #:liang.lvm
   (:use #:cl)
+
+  (:import-from :cl-pack
+   :pack :unpack)
   
   (:export #:initvm
            #:runvm
+           #:write-lvm-iseq
+           #:load-lvm-structure
+           #:write-lvm-iseq
            #:mnemonic
            #:*MNEMONIC*))
 
@@ -21,17 +27,16 @@
    :SENDEXP 10
    :SENDFN 11
    :SETQ 12
-    :RETURN 30)))
+   :RETURN 30)))
 
 (defmacro mnemonic (mnemonic)
   `(gethash ,mnemonic *MNEMONIC*))
 
 (defstruct LVM
   (iseq)
-  (ep 0 :type fixnum)
-  (pc 0 :type fixnum)
+  (ep 0)
+  (pc 0)
   (variable-size NIL :type fixnum)
-  (fp 0 :type fixnum)
   (stack))
 
 (defstruct Self
@@ -43,9 +48,9 @@
 
 (defun initvm (iseq variable-size)
   (let ((vm (make-LVM :iseq iseq :variable-size variable-size
-                      :stack (make-array 3000 :initial-element NIL))))
+                      :stack (make-array *STACKSIZE* :fill-pointer 0 :initial-element NIL))))
 
-    ;initialize main
+    ;initialize main 
 
     (setself vm (1+ (length iseq)))
 
@@ -55,21 +60,21 @@
     vm))
 
 (defun setself (vm returnp)
-  (with-slots (stack variable-size ep fp) vm
-    (stack-push vm (make-Self :returnp returnp
-                             :callerep ep
-                             :stacksize fp))
-    
-    (setf ep fp)
-    (setf fp (+ fp variable-size))
+  (with-slots (stack variable-size ep) vm
+    (vector-push (make-Self :returnp returnp
+                            :callerep ep
+                            :stacksize (fill-pointer stack))
+                 stack)
+    (setf ep (fill-pointer stack))
+    (dotimes (_ variable-size) (vector-push NIL stack))
   NIL))
 
 (defun returnself (vm)
-  (with-slots (stack variable-size ep pc fp) vm
+  (with-slots (stack variable-size ep pc) vm
     (let* ((self (aref stack (1- ep)))
            (ssize (Self-stacksize self))
            (rval (stack-pop vm T)))
-      (setf fp ssize)
+      (setf (fill-pointer stack) ssize)
       (with-slots (returnp callerep) self
         (setf ep callerep)
         (setf pc returnp)
@@ -77,19 +82,15 @@
         NIL))))
 
 (defun stack-push (vm value)
-  (let ((fp (LVM-fp vm)))
-    (setf (LVM-fp vm) (1+ fp))
-    (setf (aref (LVM-stack vm) fp) value)
-    fp))
+  (vector-push value (slot-value vm 'stack)))
 
 (defun stack-pop (vm &optional (use NIL))
-  (setf (LVM-fp vm) (1- (LVM-fp vm)))
-  (let ((value (aref (LVM-stack vm) (LVM-fp vm))))
-    (if use
-        (if (typep value 'VMVariableIndex)
-            (findvariable vm value)
-            value)
-        value)))
+  (if use
+      (let ((val (vector-pop (slot-value vm 'stack))))
+        (if (typep val 'VMVariableIndex)
+            (findvariable vm val)
+            val))
+      (vector-pop (slot-value vm 'stack))))
 
 (defun genlist-withpop (vm size &optional (use NIL))
   (reverse (loop for i from 1 to size
@@ -100,6 +101,7 @@
    (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
           (opecode (car i))
           (operand (cdr i)))
+     (declare (ignore _))
      
     (case opecode
       (,(mnemonic :PUSHNUMBER) (stack-push vm (car operand)) '1)
@@ -107,13 +109,13 @@
       (,(mnemonic :PUSHNAME)   (stack-push vm (make-VMVariableIndex :i
                                                                     (car operand)))
        '1)
-      (,(mnemonic :PUSHDEF) (destructuring-bind (name args) operand
+      (,(mnemonic :PUSHDEF) (destructuring-bind (name args &rest _) operand
                               (stack-push vm (make-LVMFunction
                                               :index name
                                               :args (genlist-withpop vm args))))
        '1)
       
-      (,(mnemonic :PUSHLAMBDA) (destructuring-bind (size args) operand
+      (,(mnemonic :PUSHLAMBDA) (destructuring-bind (size args &rest _) operand
                                  (stack-push vm (make-LVMLambda
                                                  :content-at (1+ (slot-value vm 'pc))
                                                  :content-size size
@@ -122,7 +124,8 @@
       
       (,(mnemonic :SENDEXP) (send vm (car operand) 2))
       (,(mnemonic :SENDFN)  (send vm (car operand) (second operand)))
-      (,(mnemonic :SETQ)    (destructuring-bind (x y) (genlist-withpop vm 2)
+      (,(mnemonic :SETQ)    (destructuring-bind (x y &rest _)
+                                (genlist-withpop vm 2)
                               (set-variable vm x y))
        '1)
       
@@ -135,6 +138,8 @@
     (let ((iseqsize (length iseq)))
       (setq pc 0)
       (setq ep 1)
+
       (loop :while (< pc iseqsize)
             :do (let ((x (executevm vm)))
                   (setq pc (+ pc x)))))))
+

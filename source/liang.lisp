@@ -21,3 +21,7 @@
 
 (defun liang-runvm (vm)
   (vmrun vm))
+
+(defun liang-compilefile-write (basefile targetfile)
+  (let ((iseq (liang.compiler:compile-to-lvm-byfile basefile)))
+    (liang.lvm:write-lvm-iseq iseq (hash-table-count *variable-names*) targetfile)))

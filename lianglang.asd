@@ -8,10 +8,11 @@
   :license "MIT"
   :version "0.1"
   :description "Liang Programming Language"
-  :depends-on (#:yacc #:cl-lex #:alexandria)
+  :depends-on (#:yacc #:cl-lex #:alexandria #:cl-pack)
   :pathname "source"
   :components ((:file "liang" :depends-on ("package"))
                (:file "package" :depends-on ("lvm" "liangc"))
+               (:file "lvmfile" :depends-on ("lvm"))
                (:file "lvm")
                (:file "variable" :depends-on ("lvm" "function"))
                (:file "function" :depends-on ("lvm"))
