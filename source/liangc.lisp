@@ -16,7 +16,8 @@
    #:gentree
    #:compile-to-lvm
    #:compile-to-lvm-byfile
-   #:*variable-names*))
+   #:*variable-names*
+   #:*static-heap*))
 
 
 

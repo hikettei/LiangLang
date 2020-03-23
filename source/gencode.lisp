@@ -4,6 +4,7 @@
 
 (defvar *variable-names* (make-hash-table :test 'equal))
 (defvar *compile-errors* (make-array 0 :adjustable T))
+(defvar *static-heap* (make-array 0 :adjustable T :fill-pointer 0))
 
 (defparameter *BuiltInMethods* `(= + - * / print value_if equals or))
 
@@ -19,6 +20,9 @@
 
 (dolist (i *BuiltInMethods*)
   (setf (variable-names i) NIL))
+
+(defun static-heap (value)
+  (vector-push-extend value *static-heap*))
 
 (defmacro append-liang-file (target path)
   `(dolist (files-ast (gentree (read-file-sequence ,path)))
@@ -81,7 +85,7 @@
 (defun tree2iseq (tree)
   (case (first tree)
     (:NUMBER (gencode-push :PUSHNUMBER tree))
-    (:STRING (gencode-push :PUSHSTRING tree))
+    (:STRING (iseq-builder :PUSHSTRING (static-heap (second tree))))
     (:NAME (iseq-builder :PUSHNAME (variable-names (second tree))))
     (:SETQ
      (if (eq (thirdcar tree) :CALLDEF)

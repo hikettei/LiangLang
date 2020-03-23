@@ -37,6 +37,7 @@
   (ep 0)
   (pc 0)
   (variable-size NIL :type fixnum)
+  (static-strings)
   (stack))
 
 (defstruct Self
@@ -46,9 +47,10 @@
 
 (defparameter *STACKSIZE* 3000)
 
-(defun initvm (iseq variable-size)
+(defun initvm (iseq variable-size &optional static-strings)
   (let ((vm (make-LVM :iseq iseq :variable-size variable-size
-                      :stack (make-array *STACKSIZE* :fill-pointer 0 :initial-element NIL))))
+                      :stack (make-array *STACKSIZE* :fill-pointer 0 :initial-element NIL)
+                      :static-strings static-strings)))
 
     ;initialize main 
 
@@ -105,7 +107,7 @@
      
     (case opecode
       (,(mnemonic :PUSHNUMBER) (stack-push vm (car operand)) '1)
-      (,(mnemonic :PUSHSTRING) (stack-push vm (car operand)) '1)
+      (,(mnemonic :PUSHSTRING) (stack-push vm (aref (LVM-static-strings vm) (car operand))) '1)
       (,(mnemonic :PUSHNAME)   (stack-push vm (make-VMVariableIndex :i
                                                                     (car operand)))
        '1)
