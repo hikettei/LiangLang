@@ -6,7 +6,7 @@
 (defvar *compile-errors* (make-array 0 :adjustable T))
 (defvar *static-heap* (make-array 0 :adjustable T :fill-pointer 0))
 
-(defparameter *BuiltInMethods* `(= + - * / print value_if equals or))
+(defparameter *BuiltInMethods* `(= + - * / print value_if equals or :=))
 
 (defun variable-names (&optional name)
   (gethash (write-to-string name) *variable-names*))
@@ -86,7 +86,7 @@
   (case (first tree)
     (:NUMBER (gencode-push :PUSHNUMBER tree))
     (:STRING (iseq-builder :PUSHSTRING (static-heap (second tree))))
-    (:NAME (iseq-builder :PUSHNAME (variable-names (second tree))))
+    (:NAME (iseq-builder :PUSHNAME (setf (variable-names (second tree)) NIL)))
     (:SETQ
      (if (eq (thirdcar tree) :CALLDEF)
          (progn
@@ -100,6 +100,15 @@
     (:EXP (gencode-exp tree))
     (:PUSHDEF (gencode-fn :PUSHDEF tree))
     (:CALLDEF (gencode-fn :SENDFN tree))
+    (:LOCALLY (destructuring-bind (_ args body) tree
+                (declare (ignore _))
+                (let ((compiledbody (compile-body-to-lvm body)))
+                  (with-generate-iseq i
+                    (compile-args i args)
+                    (generate-iseq i :PUSHLAMBDA (1+ (length compiledbody)) (length args))
+                    (append-iseq i compiledbody)
+                    (generate-iseq i :RETURN)
+                    (generate-iseq i :SENDPOP (length args))))))
     (:LAMBDA (destructuring-bind (_ args body) tree
                (declare (ignore _))
                (let ((compiledbody (compile-body-to-lvm body)))

@@ -16,10 +16,10 @@
   (body)
   (args-size))
 
-(defun send (vm index arg-size)
+(defun send (vm index arg-size &optional func)
   (with-slots (pc variable-size) vm
     (let ((fargs (genlist-withpop vm arg-size T))
-          (func  (findvariable vm index)))
+          (func  (if func func (findvariable vm index))))
       (cond
         ((or (typep func 'LVMFunction) (typep func 'LVMLambda))
          (with-slots (content-at content-size args) func
@@ -37,7 +37,7 @@
                           
 (defun set-defaultbuiltinmethods (vm)
   (set-builtinmethod vm 0 2 NIL)
-
+  
   (set-builtinmethod vm 1 2 #'+)
   (set-builtinmethod vm 2 2 #'-)
   (set-builtinmethod vm 3 2 #'*)
@@ -46,5 +46,6 @@
   (set-builtinmethod vm 5 1 #'print)
   (set-builtinmethod vm 6 3 #'(lambda (cond then else) (if cond then else)))
   (set-builtinmethod vm 7 2 #'(lambda (x y) (equal x y)))
-  (set-builtinmethod vm 8 2 #'(lambda (x y) (or x y))))
-
+  (set-builtinmethod vm 8 2 #'(lambda (x y) (or x y)))
+  (set-builtinmethod vm 9 2 #'(lambda (x y) (set-variable vm x y)))
+  NIL)

@@ -1,7 +1,9 @@
 
 (in-package #:liang.lvm)
 
-(declaim (inline getlocalvariable))
+(declaim (inline setlocalvariable
+                 getlocalvariable
+                 set-shortcut))
 
 (defstruct VMUndefinedVariable)
 (defstruct VMVariable
@@ -23,7 +25,7 @@
   (setf (aref (LVM-stack vm) (+ create-at index))
         (make-VariableShortcut :i (+ variable-at index))))
 
-(defmethod findvariable (vm (index number))
+(defmethod findvariable (vm (index fixnum))
   (with-slots (stack ep) vm
     (labels ((check_before (i sep)
                (declare (fixnum i sep))

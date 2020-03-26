@@ -26,7 +26,8 @@
    :PUSHLAMBDA 4
    :SENDEXP 10
    :SENDFN 11
-   :SETQ 12
+   :SENDPOP 12
+   :SETQ 22
    :RETURN 30)))
 
 (defmacro mnemonic (mnemonic)
@@ -123,7 +124,7 @@
                                                  :content-size size
                                                  :args (genlist-withpop vm args)))
                                  (1+ size)))
-      
+      (,(mnemonic :SENDPOP) (send vm NIL (car operand) (stack-pop vm)))
       (,(mnemonic :SENDEXP) (send vm (car operand) 2))
       (,(mnemonic :SENDFN)  (send vm (car operand) (second operand)))
       (,(mnemonic :SETQ)    (destructuring-bind (x y &rest _)

@@ -10,7 +10,7 @@
   ("\\b[0-9]+\\b" (return (values :number (read-from-string $@))))
 
 
-  ("###\"([^\\\"]|\\.)*?\"( |\\n)\"([^\\\"]|\\.)*?\"###"
+  ("###([^\\\"]|\\.)*?###"
    (return (values :macro-body (string-trim "###" $@))))
 
   ("(\\)(|\\s){)" (return (values :{{ :{{)))
@@ -37,6 +37,7 @@
   ("," (return (values :COMMA :COMMA)))
   ("\\." (return (values :DOT :DOT)))
   ("@" (return (values :AT-MARK :AT-MARK)))
+  ("#" (return (values :MACRO :MACRO)))
   
   ("[a-zA-Z||0-9||_||\\!||\\?]+" (return (values :funame (read-from-string $@))))
   ("[\\S]+" (return (values :name (read-from-string $@)))))

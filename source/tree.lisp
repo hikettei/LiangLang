@@ -7,10 +7,15 @@
 (defun gentree (source)
   (parse-with-lexer (*liang-lexer* source) *liang-parser*))
 
+(defvar *liang-macros* (make-hash-table :test 'equal))
+
+(defmacro liang-macros (&optional name)
+  `(gethash ,name *liang-macros*))
+
+(defun (setf liang-macros) (body &optional name)
+  (setf (gethash name *liang-macros*) body))
 
 (yacc:define-parser *liang-parser*
-
-
   (:muffle-conflicts t)
 
   (:start-symbol program)
@@ -40,6 +45,7 @@
               :END
 
               :at-mark
+              :macro
               :macro-body
               :funame
               :name))
@@ -74,7 +80,7 @@
   (liangnamelist :+ :- :* :/ :funame :name :=)
   
   (liangexp
-   (liang liangnames liang #'(lambda (x y z) `(:EXP ,y ,x ,z))) 
+   (liang liangnames liang #'(lambda (x y z) `(:EXP ,y ,x ,z)))
    (liang :+ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :- liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :* liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
@@ -93,7 +99,6 @@
                                            `(:LAMBDA ,args ,body))))
   
   (liangsyntax
-   
    (liang := liang #'(lambda (x y z) `(:SETQ ,y ,x ,z)))
 
    liangexp
@@ -103,6 +108,26 @@
                    (declare (ignore n))
                    `(:CALLDEF ,name ,name0)))
 
+   (:macro liangnames :|(| args1 :|)| := :macro-body
+           #'(lambda (n name x args y a body)
+               (declare (ignore n x y a args))
+               (setf (liang-macros name) (list (gentree body) args))
+               name))
+
+   (:macro liangnames :|(| :|)| := :macro-body
+           #'(lambda (n name x y a body)
+               (declare (ignore n x y a))
+               (setf (liang-macros) (list (gentree body) args))
+               name))
+   
+   (:macro liangnames parse-args2
+           #'(lambda (n macroname args)
+               (declare (ignore n))
+               (let ((macro (liang-macros macroname)))
+                 `(:LOCALLY NIL ( ,@(loop for i from 0 to (1- (length (second macro)))
+                                         append `(,(list :SETQ := (elt (second macro) i)
+                                                         (elt args i))))
+                                  ,@(car macro))))))
    lambdas
       
    (:|(| liang :|)| #'(lambda (x y z)
@@ -113,8 +138,7 @@
 
 
    (:funame :[ parse-args :] #'(lambda (name x y z)
-                                (declare (ignore x z))
-
+                                 (declare (ignore x z))
                                 `(:ARRAYWITHNAME ,name ,y)))
    
    (:[ parse-args :] #'(lambda (x y z)
