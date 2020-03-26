@@ -48,4 +48,7 @@
   (set-builtinmethod vm 7 2 #'(lambda (x y) (equal x y)))
   (set-builtinmethod vm 8 2 #'(lambda (x y) (or x y)))
   (set-builtinmethod vm 9 2 #'(lambda (x y) (set-variable vm x y)))
+  (set-builtinmethod vm 10 1 #'(lambda (list) (1- (lvmarray-lengthof list))))
+  (set-builtinmethod vm 11 3 #'(lambda (list n value) (lvmarray-setof list n value) n))
+  (set-builtinmethod vm 12 2 #'(lambda (list n) (lvmarray-getof list n)))
   NIL)

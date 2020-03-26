@@ -39,6 +39,8 @@
               :*
               :/
               :=
+              :<
+              :>
               
               :COMMA
               :DOT
@@ -86,6 +88,20 @@
    (liang :* liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z)))
    (liang :/ liang #'(lambda (x y z) `(:EXP (:NAME ,y) ,x ,z))))
 
+  (lianglists
+   (:< args1 :> #'(lambda (x y z)
+                    (declare (ignore x z))
+                    `(:SYMBOLLIST NIL ,(length y) ,y)))
+
+   (:funame :[ parse-args :] #'(lambda (type x y z)
+                               (declare (ignore x z))
+                               `(:VECTOR ,type ,(length y) ,y)))
+
+   (:[ parse-args :] #'(lambda (x y z)
+                         (declare (ignore x z))
+                         `(:VECTOR ,NIL ,(length y) ,y))))
+       
+  
   (lambdas
    (:{ program :} #'(lambda (x y z)
                       (declare (ignore x z))
@@ -100,7 +116,7 @@
   
   (liangsyntax
    (liang := liang #'(lambda (x y z) `(:SETQ ,y ,x ,z)))
-
+   lianglists
    liangexp
    
    (:at-mark liangnames parse-args2
@@ -136,14 +152,6 @@
    
    ; structure
 
-
-   (:funame :[ parse-args :] #'(lambda (name x y z)
-                                 (declare (ignore x z))
-                                `(:ARRAYWITHNAME ,name ,y)))
-   
-   (:[ parse-args :] #'(lambda (x y z)
-                         (declare (ignore x z))
-                         `(:ARRAY ,y)))
    
    (liang :DOT liang #'(lambda (x y z) `(:exp ,y ,x ,z)))
 

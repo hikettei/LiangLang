@@ -13,6 +13,7 @@
   :components ((:file "liang" :depends-on ("package"))
                (:file "package" :depends-on ("lvm" "liangc"))
                (:file "lvmfile" :depends-on ("lvm"))
+               (:file "array" :depends-on ("lvm"))
                (:file "lvm")
                (:file "variable" :depends-on ("lvm" "function"))
                (:file "function" :depends-on ("lvm"))

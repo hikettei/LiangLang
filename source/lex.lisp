@@ -33,7 +33,10 @@
   ("(|\\n)\\/(|\\n)"       (return (values :/ '/)))
 
   ("(|\\n)\\=(|\\n)"       (return (values := '=)))
-    
+
+  ("(|\\n)\\<(|\\n)" (return (values :< :<)))
+  ("(|\\n)\\>(|\\n)" (return (values :> :>)))
+                                        
   ("," (return (values :COMMA :COMMA)))
   ("\\." (return (values :DOT :DOT)))
   ("@" (return (values :AT-MARK :AT-MARK)))

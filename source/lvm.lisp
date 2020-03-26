@@ -28,7 +28,10 @@
    :SENDFN 11
    :SENDPOP 12
    :SETQ 22
-   :RETURN 30)))
+   :RETURN 30
+   :MAKE_SYMBOLS 41
+   :MAKE_SIMPLE_ARRAY 42 
+   :MAKE_ADJUSTABLE_ARRAY 43)))
 
 (defmacro mnemonic (mnemonic)
   `(gethash ,mnemonic *MNEMONIC*))
@@ -131,7 +134,14 @@
                                 (genlist-withpop vm 2)
                               (set-variable vm x y))
        '1)
-      
+      (,(mnemonic :MAKE_SYMBOLS) (stack-push vm (init-lvm-array
+                                                 (genlist-withpop vm (first operand))
+                                                 (first operand)))
+       '1)
+      (,(mnemonic :MAKE_ADJUSTABLE_ARRAY) (stack-push vm (init-lvm-array-adjustable
+                                                          (genlist-withpop vm (first operand) T)
+                                                          (first operand)))
+       '1)
       (,(mnemonic :RETURN) (returnself vm) '0)
       (T (print "Unimplemented opecode")
        (print opecode) '1)))))

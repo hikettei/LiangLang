@@ -6,7 +6,7 @@
 (defvar *compile-errors* (make-array 0 :adjustable T))
 (defvar *static-heap* (make-array 0 :adjustable T :fill-pointer 0))
 
-(defparameter *BuiltInMethods* `(= + - * / print value_if equals or :=))
+(defparameter *BuiltInMethods* `(= + - * / print value_if equals or := length seta geta))
 
 (defun variable-names (&optional name)
   (gethash (write-to-string name) *variable-names*))
@@ -117,5 +117,17 @@
                    (generate-iseq i :PUSHLAMBDA (1+ (length compiledbody)) (length args))
                    (append-iseq i compiledbody)
                    (generate-iseq i :RETURN)))))
+    (:SYMBOLLIST (destructuring-bind (_ _0 len contents) tree
+                   (declare (ignore _ _0))
+                   (with-generate-iseq i
+                     (dotimes (n len)
+                       (generate-tree-to-iseq i (elt contents n)))
+                     (generate-iseq i :MAKE_SYMBOLS len))))
+    (:VECTOR (destructuring-bind (_ type len contents) tree
+               (declare (ignore _ type))
+               (with-generate-iseq i
+                 (dotimes (n len)
+                   (generate-tree-to-iseq i (elt contents n)))
+                 (generate-iseq i :MAKE_ADJUSTABLE_ARRAY len))))
     (T (print tree) NIL)))
 
