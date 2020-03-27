@@ -110,9 +110,7 @@
                 (let ((compiledbody (compile-body-to-lvm body)))
                   (with-generate-iseq i
                     (compile-args i args)
-                    (generate-iseq i :PUSHLAMBDA (1+ (length compiledbody)) (length args))
                     (append-iseq i compiledbody)
-                    (generate-iseq i :RETURN)
                     (generate-iseq i :SENDPOP (length args))))))
     (:LAMBDA (destructuring-bind (_ args body) tree
                (declare (ignore _))

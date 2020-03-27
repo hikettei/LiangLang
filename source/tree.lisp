@@ -118,7 +118,7 @@
                       `(:LAMBDA NIL ,y)))
    (:|(| liangnames :{{ program :} #'(lambda (x args y body _)
                                        (declare (ignore x y _))
-                                       `(:LAMBDA ,args ,body)))
+                                       `(:LAMBDA (,args) ,body)))
    
    (:|(| args1 :{{ program :} #'(lambda (x args y body _)
                                            (declare (ignore x y _))
@@ -142,7 +142,7 @@
    (:macro liangnames :|(| liangnames :|)| := :macro-body
            #'(lambda (n name x arg y a body)
                (declare (ignore n x y a))
-               (setf (liang-macros) (list (gentree body) arg))
+               (setf (liang-macros) (list (gentree body) (list args)))
                name))
    
    (:macro liangnames :|(| args1 :|)| := :macro-body
@@ -184,17 +184,23 @@
 
    
    (liang :DOT liang #'(lambda (x y z) `(:exp ,y ,x ,z)))
-
+   
    (liangnames :|(| :|)| #'(lambda (name x y )
                              (declare (ignore x y))
-
                              `(:CALLDEF ,name NIL)))
    
    (liangnames :|(| parse-args :|)| #'(lambda (name x args y)
                                         (declare (ignore x y))
+                                        `(:CALLDEF ,name ,args)))
 
-                                        `(:CALLDEF ,name ,args))))
-
+   (liang :|(| :|)| #'(lambda (obj x y)
+                        (declare (ignore x y))
+                        `(:LOCALLY NIL (,obj))))
+   
+   (liang :|(| parse-args :|)| #'(lambda (obj x args y)
+                                   (declare (ignore x y))
+                                   `(:LOCALLY ,args (,obj)))))
+  
   (args
    parse-args)
 
