@@ -142,7 +142,7 @@
    (:macro liangnames :|(| liangnames :|)| := :macro-body
            #'(lambda (n name x arg y a body)
                (declare (ignore n x y a))
-               (setf (liang-macros) (list (gentree body) (list args)))
+               (setf (liang-macros) (list (gentree body) (list arg)))
                name))
    
    (:macro liangnames :|(| args1 :|)| := :macro-body
@@ -162,11 +162,11 @@
                (declare (ignore n))
                (let* ((macro (liang-macros macroname))
                      (macro-args (second macro)))
-                 `(:PROG (,@(loop for i from 0 to (1- (length macro-args))
+                 `(:PROG (,@(loop for i from 0 to (- (length macro-args) 2)
                                   append `((:SETQ := ,(elt macro-args i)
                                                   ,(elt args i))))
                           ,@(car macro)
-                          ,@(loop for i from 0 to (1- (length macro-args))
+                          ,@(loop for i from 0 to (- (length macro-args) 2)
                                   append `((:SETQ := ,(elt macro-args i)
                                                    ,(LVMNIL)))))))))
    
