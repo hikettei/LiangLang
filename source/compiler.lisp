@@ -1,10 +1,12 @@
 
 (in-package :liang.compiler)
 
-(defun compile-to-lvm (source &optional (use-library? T))
+(defun compile-to-lvm (source)
   (with-generate-iseq i
-    (if use-library?
-        (append-liang-file i "source/lib.liang"))
+    (setq *using-files*
+          (delete-duplicates *using-files* :test #'equal)) 
+    (mapc #'(lambda (file) (append-liang-file i file))
+          (coerce *using-files* 'list))
     (dolist (n (gentree source)) (generate-tree-to-iseq i n))
     (generate-iseq i :RETURN)))
 
