@@ -8,12 +8,21 @@
   (parse-with-lexer (*liang-lexer* source) *liang-parser*))
 
 (defvar *liang-macros* (make-hash-table :test 'equal))
+(defvar *using-files* (make-array 1 :adjustable T :fill-pointer 1
+                                    :initial-contents `("source/lib.liang")))
+
+(defun append-using-file (filepath)
+  (gentree (read-file-sequence filepath))
+  (vector-push-extend filepath *using-files*))
 
 (defmacro liang-macros (&optional name)
   `(gethash ,name *liang-macros*))
 
 (defun (setf liang-macros) (body &optional name)
   (setf (gethash name *liang-macros*) body))
+
+
+(defmacro lvmnil () `(list :NIL))
 
 (yacc:define-parser *liang-parser*
   (:muffle-conflicts t)
@@ -45,6 +54,7 @@
               :COMMA
               :DOT
               :END
+              :USING
 
               :at-mark
               :macro
@@ -118,32 +128,52 @@
    (liang := liang #'(lambda (x y z) `(:SETQ ,y ,x ,z)))
    lianglists
    liangexp
+
+   (:USING :STRING #'(lambda (x y)
+                       (declare (ignore x))
+                       (append-using-file y)
+                       `(:STRING ,y)))
    
    (:at-mark liangnames parse-args2
                #'(lambda (n name name0)
                    (declare (ignore n))
                    `(:CALLDEF ,name ,name0)))
 
+   (:macro liangnames :|(| liangnames :|)| := :macro-body
+           #'(lambda (n name x arg y a body)
+               (declare (ignore n x y a))
+               (setf (liang-macros) (list (gentree body) arg))
+               name))
+   
    (:macro liangnames :|(| args1 :|)| := :macro-body
-           #'(lambda (n name x args y a body)
-               (declare (ignore n x y a args))
-               (setf (liang-macros name) (list (gentree body) args))
+           #'(lambda (n name x arg y a body)
+               (declare (ignore n x y a))
+               (setf (liang-macros name) (list (gentree body) arg))
                name))
 
    (:macro liangnames :|(| :|)| := :macro-body
            #'(lambda (n name x y a body)
                (declare (ignore n x y a))
-               (setf (liang-macros) (list (gentree body) args))
+               (setf (liang-macros) (list (gentree body) NIL))
                name))
-   
+
    (:macro liangnames parse-args2
            #'(lambda (n macroname args)
                (declare (ignore n))
-               (let ((macro (liang-macros macroname)))
-                 `(:LOCALLY NIL ( ,@(loop for i from 0 to (1- (length (second macro)))
-                                         append `(,(list :SETQ := (elt (second macro) i)
-                                                         (elt args i))))
-                                  ,@(car macro))))))
+               (let* ((macro (liang-macros macroname))
+                     (macro-args (second macro)))
+                 `(:PROG (,@(loop for i from 0 to (1- (length macro-args))
+                                  append `((:SETQ := ,(elt macro-args i)
+                                                  ,(elt args i))))
+                          ,@(car macro)
+                          ,@(loop for i from 0 to (1- (length macro-args))
+                                  append `((:SETQ := ,(elt macro-args i)
+                                                   ,(LVMNIL)))))))))
+   
+   (:macro liangnames #'(lambda (n macroname)
+                          (declare (ignore n))
+                          (let ((macro (liang-macros macroname)))
+                            `(:PROG ,(car macro)))))
    lambdas
       
    (:|(| liang :|)| #'(lambda (x y z)

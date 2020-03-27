@@ -24,6 +24,7 @@
    :PUSHNAME   2
    :PUSHDEF    3
    :PUSHLAMBDA 4
+   :PUSHNIL 5
    :SENDEXP 10
    :SENDFN 11
    :SENDPOP 12
@@ -143,6 +144,7 @@
                                                           (first operand)))
        '1)
       (,(mnemonic :RETURN) (returnself vm) '0)
+      (,(mnemonic :PUSHNIL) (stack-push vm NIL) '1)
       (T (print "Unimplemented opecode")
        (print opecode) '1)))))
 

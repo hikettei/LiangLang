@@ -100,6 +100,11 @@
     (:EXP (gencode-exp tree))
     (:PUSHDEF (gencode-fn :PUSHDEF tree))
     (:CALLDEF (gencode-fn :SENDFN tree))
+    (:PROG (destructuring-bind (_ body) tree
+             (declare (ignore _))
+             (with-generate-iseq i
+               (dolist (n body)
+                 (generate-tree-to-iseq i n)))))
     (:LOCALLY (destructuring-bind (_ args body) tree
                 (declare (ignore _))
                 (let ((compiledbody (compile-body-to-lvm body)))
@@ -129,5 +134,6 @@
                  (dotimes (n len)
                    (generate-tree-to-iseq i (elt contents n)))
                  (generate-iseq i :MAKE_ADJUSTABLE_ARRAY len))))
+    (:NIL (iseq-builder :PUSHNIL 0))
     (T (print tree) NIL)))
 

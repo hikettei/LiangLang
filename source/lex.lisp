@@ -26,7 +26,7 @@
   ("\\("   (return (values :|(| :|(| )))
   ("\\)"   (return (values :|)| :|)| )))
 
-
+  ("using" (return (values :USING :USING)))
   ("(|\\n)\\+(|\\n)"       (return (values :+ '+)))
   ("(|\\n)\\-(|\\n)"       (return (values :- '-)))
   ("(|\\n)\\*(|\\n)"       (return (values :* '*)))

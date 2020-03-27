@@ -10,4 +10,7 @@ if(cond, then, else) = {
 when(cond, then) = {
   result = value_if(cond, then, { false });
   result()
-}
+};
+
+using "source/array.liang";
+using "source/structure.liang"
