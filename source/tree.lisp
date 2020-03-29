@@ -71,10 +71,12 @@
   (program
    (liang :END program #'(lambda (x y z)
           (declare (ignore y))
-          (cons x z)))
+                           (cons x z)))
+   (liang :END #'(lambda (x y)
+                   (declare (ignore y))
+                   (list x)))
    (liang #'list))
-
-
+  
   (liang
    liangsyntax
    liangsymbol)

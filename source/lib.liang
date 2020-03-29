@@ -4,13 +4,14 @@ false = 0;
 
 if(cond, then, else) = {
   result = value_if(cond, then, else);
-  result()
+  result();
 };
 
 when(cond, then) = {
   result = value_if(cond, then, { false });
-  result()
+  result();
 };
 
 using "source/array.liang";
-using "source/structure.liang"
+using "source/structure.liang";
+

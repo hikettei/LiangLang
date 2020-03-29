@@ -1,10 +1,10 @@
 
 search(array, name) = {
   size = length(array);
-  find(array, size, name)
+  find(array, size, name);
 };
 
 find(array, n, name) = {
   val = array geta n;
-  if(val equals name, { n }, { find(array, n - 1, name) })
-}
+  if(val equals name, { n }, { find(array, n - 1, name) });
+};

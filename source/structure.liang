@@ -1,11 +1,11 @@
 
 #structure(profile) = ###
   (form){
-    [profile, form]
-  }
+    [profile, form];
+  };
 ###;
 
 getof(structure, formname) = {
   element = search(structure geta 0, formname);
-  (structure geta 1) geta element
-}
+  (structure geta 1) geta element;
+};
