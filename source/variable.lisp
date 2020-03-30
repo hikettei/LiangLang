@@ -10,8 +10,6 @@
   (value))
 (defstruct VMVariableIndex
   (i NIL :type fixnum))
-(defstruct VariableShortcut
-  (i NIL :type fixnum))
 
 (defun setlocalvariable (vm index value)
   (setf (aref (LVM-stack vm) (+ (LVM-ep vm) index)) (make-VMVariable :value value))
@@ -30,21 +28,16 @@
     (labels ((check_before (i sep)
                (declare (fixnum i sep))
                (setf ep i)
-               (if (eq i -1) (error "Undefined Variable"))
-               (let ((variable (getlocalvariable vm index))
-                     (beforeself (aref stack (1- i))))
-                 (if variable
-                     (cond
-                       ((typep variable 'VMVariable)
-                        (unless (eq sep ep)
-                            (set-shortcut vm sep ep index))
-                        variable)
-                       ((typep variable 'VariableShortcut)
-                        (aref stack (VariableShortcut-i variable)))
-                       (T (error "VMError")))
-                     (check_before (Self-callerep beforeself) sep)))))
+               (if (eq i 0) NIL
+                   (let ((variable (getlocalvariable vm index))
+                         (beforeself (aref stack (1- i))))
+                     (if variable variable
+                     (check_before (Self-callerep beforeself) sep))))))
       (let* ((eptmp ep)
-             (result (check_before ep eptmp)))
+             (result (check_before 1 1)))
+        (setf ep eptmp)
+        (setq result (if result result
+                         (check_before ep eptmp)))
         (setf ep eptmp)
         (VMVariable-value result)))))
 
