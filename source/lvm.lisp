@@ -60,7 +60,7 @@
     ;initialize main 
 
     (setself vm (1+ (length iseq)))
-
+    
     ;implement builtin functions
 
     (set-defaultbuiltinmethods vm)
@@ -73,7 +73,8 @@
                             :stacksize (fill-pointer stack))
                  stack)
     (setf ep (fill-pointer stack))
-    (dotimes (_ variable-size) (vector-push NIL stack))
+    (setf (fill-pointer stack) (+ (fill-pointer stack)
+                                  variable-size))
   NIL))
 
 (defun returnself (vm)
@@ -81,6 +82,8 @@
     (let* ((self (aref stack (1- ep)))
            (ssize (Self-stacksize self))
            (rval (stack-pop vm T)))
+      (dotimes (i (- (fill-pointer stack) ssize))
+        (setf (aref stack (+ i ssize)) NIL))
       (setf (fill-pointer stack) ssize)
       (with-slots (returnp callerep) self
         (setf ep callerep)
@@ -99,9 +102,10 @@
             val))
       (vector-pop (slot-value vm 'stack))))
 
+(declaim (ftype (function (LVM fixnum &optional boolean)) genlist-withpop))
 (defun genlist-withpop (vm size &optional (use NIL))
-  (reverse (loop for i from 1 to size
-                 append `(,(stack-pop vm use)))))
+  (the list (reverse (loop for i from 1 to size
+                           append `(,(stack-pop vm use))))))
 
 (eval
 `(defun executevm (vm)
@@ -121,7 +125,6 @@
                                               :index name
                                               :args (genlist-withpop vm args))))
        '1)
-      
       (,(mnemonic :PUSHLAMBDA) (destructuring-bind (size args &rest _) operand
                                  (stack-push vm (make-LVMLambda
                                                  :content-at (1+ (slot-value vm 'pc))
@@ -148,7 +151,9 @@
       (T (print "Unimplemented opecode")
        (print opecode) '1)))))
 
-(defun vmrun (vm)
+(defun vmrun (vm &optional args)
+  (setlocalvariable vm 13 ; 13 = sys_args
+                (init-lvm-array args (length args)))
   (with-slots (ep pc iseq) vm
     (let ((iseqsize (length iseq)))
       (setq pc 0)

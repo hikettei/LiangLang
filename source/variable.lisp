@@ -5,7 +5,6 @@
                  getlocalvariable
                  set-shortcut))
 
-(defstruct VMUndefinedVariable)
 (defstruct VMVariable
   (value))
 (defstruct VMVariableIndex
@@ -18,10 +17,6 @@
 (defun getlocalvariable (vm index)
   (declare (fixnum index))
   (aref (LVM-stack vm) (+ (LVM-ep vm) index)))
-
-(defun set-shortcut (vm create-at variable-at index)
-  (setf (aref (LVM-stack vm) (+ create-at index))
-        (make-VariableShortcut :i (+ variable-at index))))
 
 (defmethod findvariable (vm (index fixnum))
   (with-slots (stack ep) vm
