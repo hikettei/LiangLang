@@ -12,6 +12,19 @@ when(cond, then) = {
   result();
 };
 
+map(array, filter) = {
+  size = length(array);
+  replaceN(array, filter, 0, size);
+  array
+};
+
+replaceN(array, function, i, count) = {
+  if(i equals count,
+       { seta(array, i, function(array geta i)) },
+       { seta(array, i, function(array geta i));
+         replaceN(array, function, i + 1, count) })
+};
+
 using "source/array.liang";
 using "source/structure.liang";
 

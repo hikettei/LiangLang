@@ -28,5 +28,5 @@
                 #:*static-heap*)
   
   (:export #:liang-execute-code #:liang-execute-file #:write-lvm-iseq #:liang-compilefile-write
-           #:liang-runvm))
+           #:liang-runvm #:main))
 
