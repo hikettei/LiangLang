@@ -36,4 +36,5 @@
      (let ((vm (liang.lvm:load-lvm-structure (car args))))
        (liang-runvm vm)))
     ((equal command "eval")
-     (liang-execute-code (car args) (cdr args)))))
+     (liang-execute-code (car args) (cdr args))))
+  (princ #\newline))
