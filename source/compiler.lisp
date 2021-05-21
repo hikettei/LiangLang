@@ -12,3 +12,7 @@
 
 (defun compile-to-lvm-byfile (path)
   (compile-to-lvm (read-file-sequence path)))
+
+(defun compile-to-lvm-simply (source)
+  (with-generate-iseq i
+    (dolist (n (gentree source)) (generate-tree-to-iseq i n))))
