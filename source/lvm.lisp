@@ -34,8 +34,8 @@
    :MAKE_SIMPLE_ARRAY 42 
    :MAKE_ADJUSTABLE_ARRAY 43)))
 
-(defmacro mnemonic (mnemonic)
-  `(gethash ,mnemonic *MNEMONIC*))
+(defun mnemonic (mnemonic)
+  (gethash mnemonic *MNEMONIC*))
 
 (defstruct LVM
   (iseq)
@@ -107,7 +107,60 @@
   (the list (reverse (loop for i from 1 to size
                            append `(,(stack-pop vm use))))))
 
-(eval
+(defmacro in-processing-system (name &body body)
+  `(defun ,name (vm)
+     (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
+	    (opecode (car i))
+	    (operand (cdr i))
+	    (cases (make-array 50 :initial-element NIL
+				  :fill-pointer 0)))
+       ,@body
+       (funcall (aref cases opecode) vm operand opecode))))
+
+(defmacro defprocess (opename args &body body)
+  `(setf (aref cases (mnemonic ,opename)) (lambda (,@args &rest _)
+					    (declare (ignore _))
+					    ,@body)))
+
+(in-processing-system LiangVM
+  (defprocess :PUSHNUMBER (vm operand)
+    (stack-push vm (car operand)) '1)
+  
+  (defprocess :PUSHSTRING (vm operand)
+    (stack-push vm (aref (LVM-static-strings vm) (car operand))) '1)
+
+  (defprocess :PUSHNAME (vm operand)
+    (stack-push vm (make-VMVariableIndex :i (car operand))) '1)
+
+  (defprocess :PUSHDEF (vm operand)
+    (destructuring-bind (name args &rest _) operand
+      (declare (ignore _))
+	(stack-push vm (make-LVMFunction
+			:index name
+			:args (genlist-withpop vm args)))))
+  
+  (defprocess :PUSHLAMBDA (vm operand)
+    (destructuring-bind (size args &rest _) operand
+      (declare (ignore _))
+      (stack-push vm (make-LVMLambda
+		      :content-at (1+ (slot-value vm 'pc))
+		      :content-size size
+		      :args (genlist-withpop vm args)))) '1)
+  (defprocess :SENDPOP (vm operand) (send vm NIL (car operand) (stack-pop vm)))
+  (defprocess :SENDEXP (vm operand) (send vm (car operand) 2))
+  (defprocess :SENDFN (vm operand) (send vm (car operand) (second operand)))
+  (defprocess :SETQ (vm)
+    (destructuring-bind (x y &rest _) (genlist-withpop vm 2)
+      (declare (ignore _))
+      (set-variable vm x y)))
+  (defprocess :MAKE_SYMBOLS (vm operand)
+    (stack-push vm (init-lvm-array
+		    (genlist-withpop vm (first operand))
+		    (first operand))))
+  (defprocess :RETURN (vm) (returnself vm) '0)
+  (defprocess :PUSHNIL (vm) (stack-push vm NIL) '1))
+
+ (eval
 `(defun executevm (vm)
    (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
           (opecode (car i))

@@ -119,3 +119,30 @@ String {
                                  append `(,(subseq iseq (* i 6) (+ 6 (* i 6)))))))
               (initvm 2diseq variable-field-size heapresult))))))))
             
+
+(defun x64-forward-pc (lvm)
+  (let ((i (nth (LVM-pc lvm) (LVM-iseq lvm))))
+    (case (car i)
+      (2 ;pushstring
+       (with-output-to-string (out)
+	 (format out "push ")
+	 (format out (x64-string (second i))))))))
+
+(defmacro x64-string (n)
+  `(concatenate 'string "str" (princ-to-string ,n)))
+
+(defun x64-static-string (lvm)
+  (let ((string-table (LVM-static-strings lvm))
+	(i -1))
+    (with-output-to-string (out)
+     (mapcar (lambda (s)
+	      (setq i (1+ i))
+	      (format out (concatenate 'string
+			   (x64-string i)
+			   " db "
+			   "'"
+			   s
+			   "'"
+			   ", 0"
+			   '(#\newline))))
+	     (coerce string-table 'list)))))
