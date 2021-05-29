@@ -15,7 +15,7 @@
 
 (in-package #:liang.lvm)
 
-(declaim (inline stack-push))
+(declaim (inline stack-push mnemonic))
 
 (defparameter *MNEMONIC*
   (alexandria:plist-hash-table
