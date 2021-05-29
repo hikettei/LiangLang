@@ -3,8 +3,7 @@
 
 (declaim (inline setlocalvariable
                  getlocalvariable
-                 set-shortcut
-		 findvariable))
+                 set-shortcut))
 
 (defstruct VMVariable
   (value))
@@ -19,7 +18,7 @@
   (declare (fixnum index))
   (aref (LVM-stack vm) (+ (LVM-ep vm) index)))
 
-(defun findvariable (vm fixnum)
+(defmethod findvariable (vm (index fixnum))
   (with-slots (stack ep) vm
     (labels ((check_before (i sep)
                (declare (fixnum i sep))
