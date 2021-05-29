@@ -137,7 +137,7 @@
       (declare (ignore _))
 	(stack-push vm (make-LVMFunction
 			:index name
-			:args (genlist-withpop vm args)))))
+			:args (genlist-withpop vm args)))) '1)
   
   (defprocess :PUSHLAMBDA (vm operand)
     (destructuring-bind (size args &rest _) operand
@@ -145,18 +145,22 @@
       (stack-push vm (make-LVMLambda
 		      :content-at (1+ (slot-value vm 'pc))
 		      :content-size size
-		      :args (genlist-withpop vm args)))) '1)
+		      :args (genlist-withpop vm args))) (1+ size)))
   (defprocess :SENDPOP (vm operand) (send vm NIL (car operand) (stack-pop vm)))
   (defprocess :SENDEXP (vm operand) (send vm (car operand) 2))
   (defprocess :SENDFN (vm operand) (send vm (car operand) (second operand)))
   (defprocess :SETQ (vm)
     (destructuring-bind (x y &rest _) (genlist-withpop vm 2)
       (declare (ignore _))
-      (set-variable vm x y)))
+      (set-variable vm x y)) '1)
+  (defprocess :MAKE_ADJUSTABLE_ARRAY (vm operand)
+    (stack-push vm (init-lvm-array-adjustable
+		    (genlist-withpop vm (first operand) T)
+		    (first operand))) '1)
   (defprocess :MAKE_SYMBOLS (vm operand)
     (stack-push vm (init-lvm-array
 		    (genlist-withpop vm (first operand))
-		    (first operand))))
+		    (first operand))) '1)
   (defprocess :RETURN (vm) (returnself vm) '0)
   (defprocess :PUSHNIL (vm) (stack-push vm NIL) '1))
 
