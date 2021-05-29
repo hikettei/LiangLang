@@ -159,3 +159,15 @@
 		    (first operand))))
   (defprocess :RETURN (vm) (returnself vm) '0)
   (defprocess :PUSHNIL (vm) (stack-push vm NIL) '1))
+
+(defun vmrun (vm &optional args)
+  (setlocalvariable vm 13 ; 13 = sys_args
+                (init-lvm-array args (length args)))
+  (with-slots (ep pc iseq) vm
+    (let ((iseqsize (length iseq)))
+      (setq pc 0)
+      (setq ep 1)
+
+      (loop :while (< pc iseqsize)
+            :do (let ((x (executevm vm)))
+                  (setq pc (+ pc x)))))))
