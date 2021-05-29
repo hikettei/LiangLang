@@ -42,7 +42,7 @@
        (time (liang-runvm vm))))
     ((equal command "profile")
      (let ((vm (liang.lvm:load-lvm-structure (car args))))
-       (sb-profile:profile :liang.lvm)
+       (sb-profile:profile "LIANG.LVM")
        (time (liang-runvm vm))
        (sb-profile:report))))
   (princ #\newline))
