@@ -122,7 +122,6 @@
 					    (declare (ignore _))
 					    ,@body)))
 
-
 (in-processing-system executevm
   (defprocess :PUSHNUMBER (vm operand)
     (stack-push vm (car operand)) '1)
