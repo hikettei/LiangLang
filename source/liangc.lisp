@@ -18,7 +18,8 @@
    #:compile-to-lvm-byfile
    #:*variable-names*
    #:*static-heap*
-   #:*using-files*))
+   #:*using-files*
+   #:compile-to-lvm-simply))
 
 
 
