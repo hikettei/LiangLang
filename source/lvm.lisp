@@ -112,13 +112,12 @@
      (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
 	    (opecode (car i))
 	    (operand (cdr i))
-	    (cases (make-array 50 :initial-element NIL
-				  :fill-pointer 0)))
+	    (cases (make-hash-table)))
        ,@body
-       (funcall (aref cases opecode) vm operand opecode))))
+       (funcall (gethash opecode cases) vm operand opecode))))
 
 (defmacro defprocess (opename args &body body)
-  `(setf (aref cases (mnemonic ,opename)) (lambda (,@args &rest _)
+  `(setf (gethash (mnemonic ,opename) cases) #'(lambda (,@args &rest _)
 					    (declare (ignore _))
 					    ,@body)))
 
