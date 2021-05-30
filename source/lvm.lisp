@@ -15,7 +15,17 @@
 
 (in-package #:liang.lvm)
 
-(declaim (inline stack-push mnemonic))
+(declaim (inline stack-push
+		 stack-pop
+		 findvariable
+		 genlist-withpop
+		 send
+		 mnemonic
+		 returnself
+		 setself))
+
+(eval-when (:compile-toplevel)
+  (declaim (optimize (speed 3) (space 0) (safety 0) (debug 0))))
 
 (defparameter *MNEMONIC*
   (alexandria:plist-hash-table
@@ -50,7 +60,7 @@
   (callerep NIL :type fixnum)
   (stacksize NIL :type fixnum))
 
-(defparameter *STACKSIZE* 3000)
+(defparameter *STACKSIZE* 9000)
 
 (defun initvm (iseq variable-size &optional static-strings)
   (let ((vm (make-LVM :iseq iseq :variable-size variable-size
@@ -98,7 +108,7 @@
   (if use
       (let ((val (vector-pop (slot-value vm 'stack))))
         (if (typep val 'VMVariableIndex)
-            (findvariable vm val)
+            (findvariable vm (VMVariableIndex-i val))
             val))
       (vector-pop (slot-value vm 'stack))))
 

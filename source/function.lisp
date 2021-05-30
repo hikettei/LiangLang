@@ -16,6 +16,7 @@
   (body)
   (args-size))
 
+(declaim (inline send))
 (defun send (vm index arg-size &optional func)
   (with-slots (pc variable-size) vm
     (let ((fargs (genlist-withpop vm arg-size T))
