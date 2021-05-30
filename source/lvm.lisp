@@ -108,19 +108,19 @@
                            append `(,(stack-pop vm use))))))
 
 (defmacro in-processing-system (name &body body)
-  `(defun ,name (vm)
-     (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
-	    (opecode (car i))
-	    (operand (cdr i))
-	    (cases (make-hash-table)))
-       ,@body
-       (funcall (gethash opecode cases) vm operand opecode))))
+  `(let ((,name (make-hash-table)))
+     (defun showname () ,name)
+    ,@body
+    (defun ,name (vm)
+       (let* ((i (elt (LVM-iseq vm) (LVM-pc vm)))
+	      (opecode (car i))
+	      (operand (cdr i)))
+	 (funcall (gethash opecode ,name) vm operand opecode)))))
 
 (defmacro defprocess (opename args &body body)
-  `(setf (gethash (mnemonic ,opename) cases) #'(lambda (,@args &rest _)
+  `(setf (gethash (mnemonic ,opename) (showname)) #'(lambda (,@args &rest _)
 					    (declare (ignore _))
 					    ,@body)))
-
 (in-processing-system executevm
   (defprocess :PUSHNUMBER (vm operand)
     (stack-push vm (car operand)) '1)
