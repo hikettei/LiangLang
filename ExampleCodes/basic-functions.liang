@@ -1,0 +1,18 @@
+say="Hello";
+
+print(say);
+
+@print say;
+
+
+& = (a, b){ a * b };
+
+print(@& 1, 2);
+
+print(1 & 2);
+
+f(n) = { n + 1 };
+
+a = [1,2,3,4,5];
+
+eval_in_commonlisp("(print 1)")
