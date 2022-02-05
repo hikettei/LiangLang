@@ -13,3 +13,8 @@ print(1 & 2);
 
 f(n) = { n + 1 };
 
+readline() = { eval_in_commonlisp("(read-line)") };
+
+s = readline();
+
+if(s equals "a", { print("t") }, { print("f") });
