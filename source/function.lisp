@@ -52,5 +52,6 @@
   (set-builtinmethod vm 10 1 #'(lambda (list) (1- (lvmarray-lengthof list))))
   (set-builtinmethod vm 11 3 #'(lambda (list n value) (lvmarray-setof list n value) n))
   (set-builtinmethod vm 12 2 #'(lambda (list n) (lvmarray-getof list n)))
-  (set-builtinmethod vm 13 0 NIL)
+  (set-builtinmethod vm 13 1 #'(lambda (source) (eval (read-from-string source))))
+  (set-builtinmethod vm 14 0 NIL)
   NIL)

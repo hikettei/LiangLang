@@ -6,7 +6,7 @@
 (defvar *compile-errors* (make-array 0 :adjustable T))
 (defvar *static-heap* (make-array 0 :adjustable T :fill-pointer 0))
 
-(defparameter *BuiltInMethods* `(= + - * / print value_if equals or := length seta geta))
+(defparameter *BuiltInMethods* `(= + - * / print value_if equals or := length seta geta eval_in_commonlisp sys_args))
 
 (defun variable-names (&optional name)
   (gethash (write-to-string name) *variable-names*))
