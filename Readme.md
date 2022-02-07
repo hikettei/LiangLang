@@ -99,15 +99,29 @@ if(text equals "A", { print("you said A") }, { print("you didn't say A") });
 when(text equals "A", { print("you said A") });
 ```
 
-(In addition: Programs being just one-line in lambda, you can omit a semicolons. However, if programs is sequentially, you have to append a semicolons.
+(In addition: Programs being just one-line in lambda, you can omit a semicolons. However, if programs is sequentially, you have to append a semicolons.)
 
 ### Array
+
+```
+
+```
 
 ### Structures
 
 Structures is implemented by macro features and is just working as array.
 
 ### Macros
+
+### Use Common Lisp
+
+use `eval_in_commonlisp(source)`
+
+Example:
+
+```
+eval_in_commonlisp("(+ 1 1)")
+```
 
 # Environment
 
