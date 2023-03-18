@@ -1,7 +1,7 @@
 
 # Liang Programming Language
 
-自己満足で書いてます
+自己満足で書いてます。自分で作った言語の仕様忘れました！wwwww
 
 To build this project, please refer to ./build.sh. Here is the way to build it on roswell.
 
